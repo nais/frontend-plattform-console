@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/nais/frontend-plattform-console/pkg/config"
+	"github.com/nais/bifrost/pkg/config"
 	"github.com/spf13/cobra"
 )
 

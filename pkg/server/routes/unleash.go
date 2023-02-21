@@ -5,8 +5,8 @@ import (
 	"text/template"
 
 	"github.com/gin-gonic/gin"
-	"github.com/nais/frontend-plattform-console/pkg/config"
-	"github.com/nais/frontend-plattform-console/pkg/unleash"
+	"github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/unleash"
 )
 
 func UnleashIndex(c *gin.Context) {
@@ -104,8 +104,14 @@ func UnleashInstanceDeletePost(c *gin.Context) {
 	instance := c.MustGet("instance").(*unleash.Unleash)
 	confirm := c.PostForm("confirm")
 
-	fmt.Printf("confirm: %v", confirm)
-	return
+	if confirm != "yes" {
+		c.HTML(400, "unleash-delete.html", gin.H{
+			"title":    "Delete Unleash: " + instance.DatabaseName,
+			"instance": instance,
+			"error":    "Missing confirmation",
+		})
+		return
+	}
 
 	err := unleash.DeleteInstance(ctx, instance.ProjectId, instance.Instance, instance.DatabaseName)
 	if err != nil {

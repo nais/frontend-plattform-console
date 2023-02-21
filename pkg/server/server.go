@@ -7,8 +7,8 @@ import (
 
 	"github.com/gin-contrib/multitemplate"
 	"github.com/gin-gonic/gin"
-	"github.com/nais/frontend-plattform-console/pkg/config"
-	"github.com/nais/frontend-plattform-console/pkg/server/routes"
+	"github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/server/routes"
 )
 
 func Run(config *config.Config) {
