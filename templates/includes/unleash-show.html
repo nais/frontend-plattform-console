@@ -1,0 +1,25 @@
+{{define "content"}}
+<div class="ui middle aligned divided list">
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">{{ .instance.Instance }}</div>
+    </div>
+    <i class="large database middle aligned icon"></i>
+    <div class="content">Database Instance</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">{{ .instance.DatabaseName }}</div>
+    </div>
+    <i class="large database middle aligned icon"></i>
+    <div class="content">Database Name</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">{{ .instance.DatabaseUser }}</div>
+    </div>
+    <i class="large user middle aligned icon"></i>
+    <div class="content">Database User</div>
+  </div>
+</div>
+{{end}}

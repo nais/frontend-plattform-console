@@ -1,0 +1,15 @@
+{{define "content"}}
+{{ if .error }}
+<div class="ui warning message">
+  <i class="close icon"></i>
+  {{ .error }}
+</div>
+{{ end }}
+<form class="ui form" method="POST">
+  <div class="field">
+    <label>Team Name</label>
+    <input type="text" name="team-name" placeholder="Team Name">
+  </div>
+  <button class="ui button" type="submit">Submit</button>
+</form>
+{{end}}

@@ -1,0 +1,17 @@
+{{define "content"}}
+{{ if .error }}
+<div class="ui warning message">
+  <i class="close icon"></i>
+  {{ .error }}
+</div>
+{{ end }}
+<form class="ui form" method="POST">
+  <div class="field error">
+    <div class="ui checkbox">
+      <input type="checkbox" name="confirm" tabindex="0" class="hidden">
+      <label>Yes, delete this Unleash Instance</label>
+    </div>
+  </div>
+  <button class="negative ui button" type="submit">Delete</button>
+</form>
+{{end}}
