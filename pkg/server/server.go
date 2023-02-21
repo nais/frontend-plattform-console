@@ -28,6 +28,10 @@ func Run(config *config.Config) {
 		})
 	})
 
+	router.GET("/healthz", func(c *gin.Context) {
+		c.String(200, "OK")
+	})
+
 	unleash := router.Group("/unleash")
 	{
 		unleash.GET("/", routes.UnleashIndex)
