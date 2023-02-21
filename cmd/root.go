@@ -7,10 +7,10 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "fpc",
-		Short: "Frontend Platform Console",
-		Long: `Frontend Platform Console is a web application that allows you to
-		manage your frontend applications and their features.`,
+		Use:   "bifrost",
+		Short: "Bifrost Frontend Platform Portal",
+		Long: `Frontend Platform Console is a web portal that allows developer to
+		manage resources for frontend applications.`,
 	}
 )
 
