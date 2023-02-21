@@ -5,14 +5,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var (
-	rootCmd = &cobra.Command{
-		Use:   "bifrost",
-		Short: "Bifrost Frontend Platform Portal",
-		Long: `Frontend Platform Console is a web portal that allows developer to
+var rootCmd = &cobra.Command{
+	Use:   "bifrost",
+	Short: "Bifrost Frontend Platform Portal",
+	Long: `Frontend Platform Console is a web portal that allows developer to
 		manage resources for frontend applications.`,
-	}
-)
+}
 
 // Execute executes the root command.
 func Execute() error {

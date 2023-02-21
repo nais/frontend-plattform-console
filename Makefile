@@ -5,7 +5,7 @@ LDFLAGS := -X github.com/nais/bifrost/pkg/version.Revision=$(LAST_COMMIT) -X git
 
 .PHONY: alpine bifrost test
 
-all: bifrost
+all: fmt check test bifrost
 
 bifrost:
 	go build -o bin/bifrost -ldflags "-s $(LDFLAGS)" .

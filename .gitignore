@@ -24,3 +24,5 @@ go.work
 # Air
 tmp/
 
+# .env
+.env

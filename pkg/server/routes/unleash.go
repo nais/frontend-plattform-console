@@ -13,7 +13,7 @@ func UnleashIndex(c *gin.Context) {
 	ctx := c.Request.Context()
 	config := c.MustGet("config").(*config.Config)
 	projectID := config.Google.ProjectID
-	instanceID := config.Google.SQLInstanceID
+	instanceID := config.Unleash.SQLInstanceID
 
 	instances, err := unleash.GetInstances(ctx, projectID, instanceID)
 	if err != nil {
@@ -43,7 +43,7 @@ func UnleashNewPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	config := c.MustGet("config").(*config.Config)
 	projectID := config.Google.ProjectID
-	instanceID := config.Google.SQLInstanceID
+	instanceID := config.Unleash.SQLInstanceID
 
 	if teamName == "" {
 		c.HTML(400, "unleash-form.html", gin.H{
@@ -68,7 +68,7 @@ func UnleashInstanceMiddleware(c *gin.Context) {
 	ctx := c.Request.Context()
 	config := c.MustGet("config").(*config.Config)
 	projectID := config.Google.ProjectID
-	instanceID := config.Google.SQLInstanceID
+	instanceID := config.Unleash.SQLInstanceID
 
 	instance, err := unleash.GetInstance(ctx, projectID, instanceID, databaseID)
 	if err != nil {
