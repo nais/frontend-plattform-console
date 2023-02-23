@@ -2,7 +2,7 @@ package config
 
 import (
 	"context"
-	"fmt"
+	"log"
 
 	"github.com/joho/godotenv"
 	"github.com/sethvargo/go-envconfig"
@@ -40,7 +40,9 @@ func (c *Config) GetServerAddr() string {
 func Setup(com *cobra.Command) {
 	err := godotenv.Load()
 	if err != nil {
-		fmt.Printf("Error loading .env file: %s\n", err.Error())
+		if err.Error() != "open .env: no such file or directory" {
+			log.Fatal(err)
+		}
 	}
 }
 
