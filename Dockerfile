@@ -18,4 +18,5 @@ RUN apk add --no-cache ca-certificates tzdata
 RUN export PATH=$PATH:/app
 WORKDIR /app
 COPY --from=builder /src/bin/bifrost /app/bifrost
+COPY --from=builder /src/templates /app/templates
 CMD ["/app/bifrost"]
