@@ -15,7 +15,7 @@ var runCmd = &cobra.Command{
 	Short: "Run the server",
 	Long:  `Run the server and start listening for requests`,
 	Run: func(cmd *cobra.Command, args []string) {
-		config := config.New()
+		config := config.New(cmd.Context())
 		server.Run(config)
 	},
 }
