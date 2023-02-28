@@ -2,21 +2,27 @@
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">{{ .instance.Instance }}</div>
+      <div class="ui label">{{ .instance.DatabaseInstance.Name }}</div>
     </div>
     <i class="large database middle aligned icon"></i>
     <div class="content">Database Instance</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">{{ .instance.DatabaseName }}</div>
+      <div class="ui label">{{ .instance.Database.Name }}</div>
     </div>
     <i class="large database middle aligned icon"></i>
     <div class="content">Database Name</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">{{ .instance.DatabaseUser }}</div>
+      <div class="ui label">
+      {{ if .instance.DatabaseUser }}
+        {{ .instance.DatabaseUser.Name }}
+      {{ else }}
+        <i class="exclamation triangle icon"></i> Not Found
+      {{ end }}
+      </div>
     </div>
     <i class="large user middle aligned icon"></i>
     <div class="content">Database User</div>

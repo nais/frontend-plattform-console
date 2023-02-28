@@ -9,18 +9,28 @@
   <i class="pencil alternate icon"></i> New Instance
 </a>
 <p>Welcome to Unleash as a Service</p>
+{{ if .instances }}
 <div class="ui relaxed divided list">
   {{ range .instances }}
   <div class="item">
     <div class="right floated content">
-      <a class="ui button" href="{{ .DatabaseName }}/delete">Delete</a>
+      <a class="ui button" href="{{ .Database.Name }}/delete">Delete</a>
     </div>
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">
-      <a class="header" href="{{ .DatabaseName }}">{{ .DatabaseName }}</a>
+      <a class="header" href="{{ .Database.Name }}">{{ .Database.Name }}</a>
       <div class="description">Updated 22 mins ago</div>
     </div>
   </div>
   {{ end }}
 </div>
-{{end}}
+{{ else }}
+<div class="ui placeholder segment">
+  <div class="ui icon header">
+    <i class="toggle on icon"></i>
+    No Unleash Instances have been created yet.
+  </div>
+  <a class="ui primary button" href="new">Create Instance</a>
+</div>
+{{ end }}
+{{ end }}

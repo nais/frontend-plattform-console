@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/spf13/cobra"
@@ -23,7 +24,8 @@ type GoogleConfig struct {
 }
 
 type UnleashConfig struct {
-	SQLInstanceID string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ID,required"`
+	InstanceNamespace string `env:"BIFROST_UNLEASH_INSTANCE_NAMESPACE,required"`
+	SQLInstanceID     string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ID,required"`
 }
 
 type Config struct {
@@ -35,6 +37,13 @@ type Config struct {
 
 func (c *Config) GetServerAddr() string {
 	return c.Server.Host + ":" + c.Server.Port
+}
+
+func (c *Config) GinMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Set("config", c)
+		c.Next()
+	}
 }
 
 func Setup(com *cobra.Command) {

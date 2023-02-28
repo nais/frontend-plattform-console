@@ -1,16 +1,44 @@
 package unleash
 
-import "context"
+import (
+	"context"
+	"errors"
+
+	admin "google.golang.org/api/sqladmin/v1beta4"
+	v1 "k8s.io/api/core/v1"
+	"k8s.io/client-go/kubernetes"
+)
 
 type Unleash struct {
-	ProjectId    string
-	Instance     string
-	DatabaseName string
-	DatabaseUser string
+	TeamName            string
+	KubernetesNamespace string
+	DatabaseInstance    *admin.DatabaseInstance
+	Database            *admin.Database
+	DatabaseUser        *admin.User
+	Secret              *v1.Secret
 }
 
-func GetInstances(ctx context.Context, projectId string, instanceId string) ([]Unleash, error) {
-	databases, err := listDatabases(ctx, projectId, instanceId)
+func (u *Unleash) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
+	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.Database.Name)
+	if err != nil {
+		return err
+	}
+
+	u.DatabaseUser = user
+
+	return nil
+}
+
+func (u *Unleash) Delete(ctx context.Context, googleClient *admin.Service, kubeClient *kubernetes.Clientset) error {
+	dbUserErr := deleteDatabaseUser(ctx, googleClient, u.DatabaseInstance, u.Database.Name)
+	dbErr := deleteDatabase(ctx, googleClient, u.DatabaseInstance, u.Database.Name)
+	dbUserSecretErr := deleteDatabaseUserSecret(ctx, kubeClient, u.KubernetesNamespace, u.Database.Name)
+
+	return errors.Join(dbUserErr, dbErr, dbUserSecretErr)
+}
+
+func GetInstances(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, kubeNamespace string) ([]Unleash, error) {
+	databases, err := getDatabases(ctx, googleClient, databaseInstance)
 	if err != nil {
 		return nil, err
 	}
@@ -23,42 +51,36 @@ func GetInstances(ctx context.Context, projectId string, instanceId string) ([]U
 		}
 
 		instances = append(instances, Unleash{
-			ProjectId:    projectId,
-			Instance:     instanceId,
-			DatabaseName: database.Name,
+			TeamName:            database.Name,
+			KubernetesNamespace: kubeNamespace,
+			DatabaseInstance:    databaseInstance,
+			Database:            database,
 		})
 	}
 
 	return instances, nil
 }
 
-func GetInstance(ctx context.Context, projectId string, instanceId string, databaseId string) (Unleash, error) {
-	database, err := getDatabase(ctx, projectId, instanceId, databaseId)
-	if err != nil {
-		return Unleash{}, err
-	}
-
-	databaseUser, err := getDatabaseUser(ctx, projectId, instanceId, databaseId)
+func GetInstance(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, databaseName string, kubeNamespace string) (Unleash, error) {
+	database, err := getDatabase(ctx, googleClient, databaseInstance, databaseName)
 	if err != nil {
 		return Unleash{}, err
 	}
 
 	return Unleash{
-		ProjectId:    projectId,
-		Instance:     instanceId,
-		DatabaseName: database.Name,
-		DatabaseUser: databaseUser.Name,
+		TeamName:            database.Name,
+		KubernetesNamespace: kubeNamespace,
+		DatabaseInstance:    databaseInstance,
+		Database:            database,
 	}, nil
 }
 
-func CreateInstance(ctx context.Context, projectId string, instanceId string, databaseId string) (Unleash, error) {
-	err := createDatabase(ctx, projectId, instanceId, databaseId)
-	if err != nil {
-		return Unleash{}, err
-	}
+func CreateInstance(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, databaseName string, kubeClient *kubernetes.Clientset, kubeNamespace string) (Unleash, error) {
+	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
+	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
+	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, kubeNamespace, databaseInstance, database, databaseUser)
 
-	databaseUser, err := createDatabaseUser(ctx, projectId, instanceId, databaseId)
-	if err != nil {
+	if err := errors.Join(dbErr, dbUserErr, secretErr); err != nil {
 		return Unleash{}, err
 	}
 
@@ -66,26 +88,9 @@ func CreateInstance(ctx context.Context, projectId string, instanceId string, da
 	// TODO: create unleash instance
 
 	return Unleash{
-		ProjectId:    projectId,
-		Instance:     instanceId,
-		DatabaseName: databaseId,
-		DatabaseUser: databaseUser.Name,
+		TeamName:         databaseName,
+		DatabaseInstance: databaseInstance,
+		Database:         database,
+		DatabaseUser:     databaseUser,
 	}, nil
-}
-
-func DeleteInstance(ctx context.Context, projectId string, instanceId string, databaseId string) error {
-	// TODO: delete unleash instance
-	// TODO: delete kubernetes secret
-
-	err := deleteDatabaseUser(ctx, projectId, instanceId, databaseId)
-	if err != nil {
-		return err
-	}
-
-	err = deleteDatabase(ctx, projectId, instanceId, databaseId)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

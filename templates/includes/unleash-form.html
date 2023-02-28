@@ -1,15 +1,24 @@
 {{define "content"}}
-{{ if .error }}
-<div class="ui warning message">
-  <i class="close icon"></i>
-  {{ .error }}
-</div>
-{{ end }}
-<form class="ui form" method="POST">
+<form class="ui form{{ if .error }} error{{ end }}" method="POST">
   <div class="field">
     <label>Team Name</label>
     <input type="text" name="team-name" placeholder="Team Name">
+    {{ if eq .action "delete" }}
+    <p>Type the name of the Unleash instance in order to confirm.</p>
+    {{ end }}
   </div>
-  <button class="ui button" type="submit">Submit</button>
+  {{ if .error }}
+  <div class="ui error message">
+    <div class="header">Validation failed</div>
+    <p>{{ .error }}</p>
+  </div>
+  {{ end }}
+  {{ if eq .action "create" }}
+    <button class="ui button" type="submit">Submit</button>
+  {{ else if eq .action "update" }}
+    <button class="ui button" type="submit">Update</button>
+  {{ else if eq .action "delete" }}
+    <button class="ui danger button" type="submit">Delete</button>
+  {{ end }}
 </form>
 {{end}}

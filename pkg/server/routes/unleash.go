@@ -7,22 +7,25 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/config"
 	"github.com/nais/bifrost/pkg/unleash"
+	"github.com/sirupsen/logrus"
+	admin "google.golang.org/api/sqladmin/v1beta4"
+	"k8s.io/client-go/kubernetes"
 )
 
 func UnleashIndex(c *gin.Context) {
 	ctx := c.Request.Context()
-	config := c.MustGet("config").(*config.Config)
-	projectID := config.Google.ProjectID
-	instanceID := config.Unleash.SQLInstanceID
 
-	instances, err := unleash.GetInstances(ctx, projectID, instanceID)
+	config := c.MustGet("config").(*config.Config)
+	googleClient := c.MustGet("googleClient").(*admin.Service)
+	SQLInstance := c.MustGet("unleashSQLInstance").(*admin.DatabaseInstance)
+
+	instances, err := unleash.GetInstances(ctx, googleClient, SQLInstance, config.Unleash.InstanceNamespace)
 	if err != nil {
-		fmt.Printf("Error getting unleash instances: %v", err)
-		c.Error(err).Meta = "Error getting unleash instances"
+		c.Error(err).
+			SetType(gin.ErrorTypePublic).
+			SetMeta("Error getting unleash instances")
 		return
 	}
-
-	fmt.Printf("instances: %v", instances)
 
 	status := template.HTMLEscapeString(c.Query("status"))
 	c.HTML(200, "unleash-index.html", gin.H{
@@ -34,16 +37,19 @@ func UnleashIndex(c *gin.Context) {
 
 func UnleashNew(c *gin.Context) {
 	c.HTML(200, "unleash-form.html", gin.H{
-		"title": "New Unleash Instance",
+		"title":  "New Unleash Instance",
+		"action": "create",
 	})
 }
 
 func UnleashNewPost(c *gin.Context) {
 	teamName := c.PostForm("team-name")
 	ctx := c.Request.Context()
+
 	config := c.MustGet("config").(*config.Config)
-	projectID := config.Google.ProjectID
-	instanceID := config.Unleash.SQLInstanceID
+	googleClient := c.MustGet("googleClient").(*admin.Service)
+	kubeClient := c.MustGet("kubeClient").(*kubernetes.Clientset)
+	SQLInstance := c.MustGet("unleashSQLInstance").(*admin.DatabaseInstance)
 
 	if teamName == "" {
 		c.HTML(400, "unleash-form.html", gin.H{
@@ -53,10 +59,11 @@ func UnleashNewPost(c *gin.Context) {
 		return
 	}
 
-	_, err := unleash.CreateInstance(ctx, projectID, instanceID, teamName)
+	_, err := unleash.CreateInstance(ctx, googleClient, SQLInstance, teamName, kubeClient, config.Unleash.InstanceNamespace)
 	if err != nil {
-		fmt.Printf("Error creating unleash instance: %v", err)
-		c.Error(err).Meta = "Error creating unleash instance"
+		c.Error(err).
+			SetType(gin.ErrorTypePublic).
+			SetMeta("Error creating unleash instance")
 		return
 	}
 
@@ -64,59 +71,75 @@ func UnleashNewPost(c *gin.Context) {
 }
 
 func UnleashInstanceMiddleware(c *gin.Context) {
-	databaseID := c.Param("id")
+	databaseName := c.Param("id")
 	ctx := c.Request.Context()
-	config := c.MustGet("config").(*config.Config)
-	projectID := config.Google.ProjectID
-	instanceID := config.Unleash.SQLInstanceID
 
-	instance, err := unleash.GetInstance(ctx, projectID, instanceID, databaseID)
+	log := c.MustGet("log").(*logrus.Logger)
+	config := c.MustGet("config").(*config.Config)
+	googleClient := c.MustGet("googleClient").(*admin.Service)
+	SQLInstance := c.MustGet("unleashSQLInstance").(*admin.DatabaseInstance)
+
+	instance, err := unleash.GetInstance(ctx, googleClient, SQLInstance, databaseName, config.Unleash.InstanceNamespace)
 	if err != nil {
-		fmt.Printf("Error getting unleash instance: %v", err)
-		c.Error(err).SetType(gin.ErrorTypePublic).SetMeta("Error getting unleash instance")
+		log.Info(err)
+		c.Redirect(404, "/unleash?status=not-found")
+		c.Abort()
 		return
 	}
 
-	c.Set("instance", &instance)
+	c.Set("unleashInstance", &instance)
 	c.Next()
 }
 
 func UnleashInstanceShow(c *gin.Context) {
-	instance := c.MustGet("instance").(*unleash.Unleash)
+	ctx := c.Request.Context()
+	log := c.MustGet("log").(*logrus.Logger)
+	googleClient := c.MustGet("googleClient").(*admin.Service)
+
+	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
+	err := instance.GetDatabaseUser(ctx, googleClient)
+	if err != nil {
+		log.WithError(err).Errorf("Error getting database user for instance %s", instance.Database.Name)
+	}
 
 	c.HTML(200, "unleash-show.html", gin.H{
-		"title":    "Unleash: " + instance.DatabaseName,
+		"title":    "Unleash: " + instance.TeamName,
 		"instance": instance,
 	})
 }
 
 func UnleashInstanceDelete(c *gin.Context) {
-	instance := c.MustGet("instance").(*unleash.Unleash)
+	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
 
-	c.HTML(200, "unleash-delete.html", gin.H{
-		"title":    "Delete Unleash: " + instance.DatabaseName,
-		"instance": instance,
+	c.HTML(200, "unleash-form.html", gin.H{
+		"title":  "Delete Unleash: " + instance.TeamName,
+		"action": "delete",
 	})
 }
 
 func UnleashInstanceDeletePost(c *gin.Context) {
 	ctx := c.Request.Context()
-	instance := c.MustGet("instance").(*unleash.Unleash)
-	confirm := c.PostForm("confirm")
+	teamName := c.PostForm("team-name")
 
-	if confirm != "yes" {
-		c.HTML(400, "unleash-delete.html", gin.H{
-			"title":    "Delete Unleash: " + instance.DatabaseName,
-			"instance": instance,
-			"error":    "Missing confirmation",
+	kubeClient := c.MustGet("kubeClient").(*kubernetes.Clientset)
+	googleClient := c.MustGet("googleClient").(*admin.Service)
+	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
+
+	fmt.Printf("teamName: %s, instance.TeamName: %s", teamName, instance.TeamName)
+
+	if teamName != instance.TeamName {
+		c.HTML(400, "unleash-form.html", gin.H{
+			"title":  "Delete Unleash: " + instance.TeamName,
+			"action": "delete",
+			"error":  "Missing confirmation",
 		})
 		return
 	}
 
-	err := unleash.DeleteInstance(ctx, instance.ProjectId, instance.Instance, instance.DatabaseName)
-	if err != nil {
-		fmt.Printf("Error deleting unleash instance: %v", err)
-		c.Error(err).Meta = "Error deleting unleash instance"
+	if err := instance.Delete(ctx, googleClient, kubeClient); err != nil {
+		c.Error(err).
+			SetType(gin.ErrorTypePublic).
+			SetMeta("Error deleting unleash instance")
 		return
 	}
 
