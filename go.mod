@@ -1,6 +1,6 @@
 module github.com/nais/bifrost
 
-go 1.19
+go 1.20
 
 require (
 	github.com/gin-contrib/multitemplate v0.0.0-20230212012517-45920c92c271
