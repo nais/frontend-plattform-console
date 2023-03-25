@@ -13,7 +13,7 @@ RUN make test
 RUN make check
 RUN make alpine
 
-FROM alpine:3.15
+FROM alpine:3.17
 RUN apk add --no-cache ca-certificates tzdata
 RUN export PATH=$PATH:/app
 WORKDIR /app
