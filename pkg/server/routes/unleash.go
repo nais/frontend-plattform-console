@@ -1,7 +1,7 @@
 package routes
 
 import (
-	"fmt"
+	"regexp"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -43,7 +43,7 @@ func UnleashNew(c *gin.Context) {
 }
 
 func UnleashNewPost(c *gin.Context) {
-	teamName := c.PostForm("team-name")
+	teamName := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("team-name"), "")
 	ctx := c.Request.Context()
 
 	config := c.MustGet("config").(*config.Config)
@@ -119,13 +119,11 @@ func UnleashInstanceDelete(c *gin.Context) {
 
 func UnleashInstanceDeletePost(c *gin.Context) {
 	ctx := c.Request.Context()
-	teamName := c.PostForm("team-name")
+	teamName := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("team-name"), "")
 
 	kubeClient := c.MustGet("kubeClient").(*kubernetes.Clientset)
 	googleClient := c.MustGet("googleClient").(*admin.Service)
 	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
-
-	fmt.Printf("teamName: %s, instance.TeamName: %s", teamName, instance.TeamName)
 
 	if teamName != instance.TeamName {
 		c.HTML(400, "unleash-form.html", gin.H{
