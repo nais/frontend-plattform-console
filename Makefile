@@ -14,9 +14,13 @@ test:
 	go test ./...
 
 fmt:
+	go mod download mvdan.cc/gofumpt
 	go run mvdan.cc/gofumpt -w ./
 
 check:
+	go mod download honnef.co/go/tools
+	go mod download golang.org/x/vuln
+
 	go run honnef.co/go/tools/cmd/staticcheck ./...
 	go run golang.org/x/vuln/cmd/govulncheck -v ./...
 
