@@ -18,11 +18,11 @@ test:
 	go test ./...
 
 .PHONY: fmt
-fmt:
+fmt: gofumpt
 	$(GOFUMPT) -w ./
 
 .PHONY: check
-check:
+check: staticcheck govulncheck
 	$(STATICCHECK) ./...
 	$(GOVULNCHECK) -v ./...
 
