@@ -8,7 +8,8 @@
 *.so
 *.dylib
 bin/*
-
+.direnv
+.envrc
 # Test binary, built with `go test -c`
 *.test
 
