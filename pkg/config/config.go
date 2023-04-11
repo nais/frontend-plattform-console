@@ -21,6 +21,7 @@ type ServerConfig struct {
 
 type GoogleConfig struct {
 	ProjectID           string `env:"BIFROST_GOOGLE_PROJECT_ID,required"`
+	ProjectNumber       string `env:"BIFROST_GOOGLE_PROJECT_NUMBER,required"`
 	IAPBackendServiceID string `env:"BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID,required"`
 }
 
