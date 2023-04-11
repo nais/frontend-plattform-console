@@ -4,8 +4,12 @@ import (
 	"context"
 	"errors"
 
+	"github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	admin "google.golang.org/api/sqladmin/v1beta4"
-	v1 "k8s.io/api/core/v1"
+	corev1 "k8s.io/api/core/v1"
+	networkingv1 "k8s.io/api/networking/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -15,7 +19,7 @@ type Unleash struct {
 	DatabaseInstance    *admin.DatabaseInstance
 	Database            *admin.Database
 	DatabaseUser        *admin.User
-	Secret              *v1.Secret
+	Secret              *corev1.Secret
 }
 
 func (u *Unleash) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
@@ -93,4 +97,37 @@ func CreateInstance(ctx context.Context, googleClient *admin.Service, databaseIn
 		Database:         database,
 		DatabaseUser:     databaseUser,
 	}, nil
+}
+
+func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, databaseInstance *admin.DatabaseInstance) error {
+	protocolTCP := corev1.ProtocolTCP
+
+	fqdn := v1alpha3.FQDNNetworkPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "unleash",
+			Namespace: kubeNamespace,
+		},
+		Spec: v1alpha3.FQDNNetworkPolicySpec{
+			PodSelector: metav1.LabelSelector{
+				MatchLabels: map[string]string{
+					"app": "unleash",
+				},
+			},
+			Egress: []v1alpha3.FQDNNetworkPolicyEgressRule{
+				{
+					Ports: []networkingv1.NetworkPolicyPort{
+						{
+							Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 5432},
+							Protocol: &protocolTCP,
+						},
+					},
+					To: []v1alpha3.FQDNNetworkPolicyPeer{
+						{
+							FQDNs: []string{"sqladmin.googleapis.com"},
+						},
+					},
+				},
+			},
+		},
+	}
 }
