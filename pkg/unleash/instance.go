@@ -3,8 +3,11 @@ package unleash
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	"github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
+	bifrostConfig "github.com/nais/bifrost/pkg/config"
+	unleashv1 "github.com/nais/unleasherator/api/v1"
 	admin "google.golang.org/api/sqladmin/v1beta4"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -79,17 +82,186 @@ func GetInstance(ctx context.Context, googleClient *admin.Service, databaseInsta
 	}, nil
 }
 
-func CreateInstance(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, databaseName string, kubeClient *kubernetes.Clientset, kubeNamespace string) (Unleash, error) {
+func boolRef(b bool) *bool {
+	boolVar := b
+	return &boolVar
+}
+
+func int64Ref(i int64) *int64 {
+	intvar := i
+	return &intvar
+}
+
+func createUnleashCrd(ctx context.Context,
+	bifrostConfig bifrostConfig.Config,
+	databaseConfig unleashv1.DatabaseConfig,
+	teamName string,
+	projectName string,
+	googleIapAudience string,
+	webIngressHost string,
+	webIngressClass string,
+	apiIngressHost string,
+	apiIngressClass string,
+	apiIngress unleashv1.IngressConfig,
+	networkPolicy unleashv1.NetworkPolicyConfig,
+) unleashv1.UnleashSpec {
+	tcpProtocol := "TCP"
+	cloudSql := intstr.FromInt(3307)
+	tlsPort := intstr.FromInt(443)
+	googleMetaDataPort := intstr.FromInt(988)
+	port80 := intstr.FromInt(80)
+	cloudsqlInstanceCidr := "cool-cidr"
+	spec := unleashv1.UnleashSpec{
+		Size: 0,
+		Database: unleashv1.DatabaseConfig{
+			SecretName:            teamName,
+			SecretUserKey:         "POSTGRES_USER",
+			SecretPassKey:         "POSTGRES_PASSWORD",
+			SecretHostKey:         "POSTGRES_HOST",
+			SecretDatabaseNameKey: "POSTGRES_DB",
+		},
+		WebIngress: unleashv1.IngressConfig{
+			Enabled:     false,
+			Host:        fmt.Sprintf("%s-%s", teamName, webIngressHost),
+			Path:        "",
+			TLS:         &unleashv1.IngressTLSConfig{},
+			Annotations: map[string]string{},
+			Class:       webIngressClass,
+		},
+		ApiIngress: unleashv1.IngressConfig{
+			Enabled:     false,
+			Host:        fmt.Sprintf("%s-%s", teamName, apiIngressHost),
+			Path:        "",
+			TLS:         &unleashv1.IngressTLSConfig{},
+			Annotations: map[string]string{},
+			Class:       apiIngressClass,
+		},
+		NetworkPolicy: unleashv1.NetworkPolicyConfig{
+			Enabled:           true,
+			AllowDNS:          true,
+			ExtraIngressRules: []networkingv1.NetworkPolicyIngressRule{},
+			ExtraEgressRules: []networkingv1.NetworkPolicyEgressRule{
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &cloudSql,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: cloudsqlInstanceCidr,
+						},
+					}},
+				}, // v These are gstatic.com ips
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &tlsPort,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: "142.250.74.35/32",
+						},
+					}},
+				},
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &tlsPort,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: "142.250.74.131/32",
+						},
+					}},
+				},
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &tlsPort,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: "216.58.211.3/32",
+						},
+					}},
+				},
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &googleMetaDataPort,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: "169.254.169.252/32",
+						},
+					}},
+				},
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &googleMetaDataPort,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: "127.0.0.1/32",
+						},
+					}},
+				},
+				{
+					Ports: []networkingv1.NetworkPolicyPort{{
+						Protocol: (*corev1.Protocol)(&tcpProtocol),
+						Port:     &port80,
+					}},
+					To: []networkingv1.NetworkPolicyPeer{{
+						IPBlock: &networkingv1.IPBlock{
+							CIDR: "169.254.169.254/32",
+						},
+					}},
+				},
+			},
+		},
+		ExtraEnvVars: []corev1.EnvVar{{
+			Name:  "GOOGLE_IAP_AUDIENCE",
+			Value: googleIapAudience,
+		}},
+		ExtraContainers: []corev1.Container{{
+			Name:    "sql-proxy",
+			Image:   bifrostConfig.CloudConnectorProxy,
+			Command: []string{},
+			Args: []string{
+				"--structured-logs",
+				"--port=5432",
+				projectName,
+			},
+			SecurityContext: &corev1.SecurityContext{
+				Capabilities: &corev1.Capabilities{
+					Drop: []corev1.Capability{"ALL"},
+				},
+				Privileged:               boolRef(false),
+				RunAsUser:                int64Ref(65532),
+				RunAsNonRoot:             boolRef(true),
+				AllowPrivilegeEscalation: boolRef(false),
+			},
+		}},
+		ExistingServiceAccountName: serviceAccountName,
+		Resources:                  corev1.ResourceRequirements{},
+	}
+
+	return spec
+}
+
+func CreateInstance(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, databaseName string, kubeClient *kubernetes.Clientset, kubeNamespace string, namespace string) (Unleash, error) {
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
 	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, kubeNamespace, databaseInstance, database, databaseUser)
+	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, kubeNamespace, database.Name)
 
-	if err := errors.Join(dbErr, dbUserErr, secretErr); err != nil {
+	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError); err != nil {
 		return Unleash{}, err
 	}
 
-	// TODO: create kubernetes secret
 	// TODO: create unleash instance
+	unleash := unleashv1.UnleashSpec{}
 
 	return Unleash{
 		TeamName:         databaseName,
@@ -99,35 +271,44 @@ func CreateInstance(ctx context.Context, googleClient *admin.Service, databaseIn
 	}, nil
 }
 
-func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, databaseInstance *admin.DatabaseInstance) error {
+func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, teamName string) error {
 	protocolTCP := corev1.ProtocolTCP
 
 	fqdn := v1alpha3.FQDNNetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "unleash",
+			Name:      teamName,
 			Namespace: kubeNamespace,
 		},
 		Spec: v1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app": "unleash",
+					"app.kubernetes.io/instance":   teamName,
+					"app.kubernetes.io/part-of":    "unleasherator",
+					"app.kubernetes.io/created-by": "controller-manager",
 				},
 			},
 			Egress: []v1alpha3.FQDNNetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{
 						{
-							Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 5432},
+							Port:     &intstr.IntOrString{Type: intstr.Int, IntVal: 443},
 							Protocol: &protocolTCP,
 						},
 					},
 					To: []v1alpha3.FQDNNetworkPolicyPeer{
 						{
-							FQDNs: []string{"sqladmin.googleapis.com"},
+							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com"},
 						},
 					},
 				},
 			},
 		},
 	}
+	status := 0
+	// TODO: Use the actual client api instead of the rest client
+	res := kubeClient.RESTClient().Post().Resource("fqdnnetworkpolicies").Namespace(kubeNamespace).Body(&fqdn).Do(ctx).StatusCode(&status)
+	if status != 201 {
+		return (errors.New("Failed to created fqdnnetworkpolicy resource"))
+	}
+	return res.Error()
 }

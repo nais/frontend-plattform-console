@@ -38,10 +38,11 @@ type UnleashConfig struct {
 }
 
 type Config struct {
-	Server    ServerConfig
-	Google    GoogleConfig
-	Unleash   UnleashConfig
-	DebugMode bool
+	Server              ServerConfig
+	Google              GoogleConfig
+	Unleash             UnleashConfig
+	DebugMode           bool
+	CloudConnectorProxy string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ID,default=gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0"`
 }
 
 func (c *Config) GetServerAddr() string {

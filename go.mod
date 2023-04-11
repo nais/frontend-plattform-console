@@ -58,7 +58,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
 	github.com/nais/liberator v0.0.0-20230316141356-e66bce2ef277 // indirect
-	github.com/nais/unleasherator v0.0.0-20230328165909-2671918414ba // indirect
+	github.com/nais/unleasherator v0.0.0-20230411085608-badce5d57be7 // indirect
 	github.com/pelletier/go-toml/v2 v2.0.6 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.14.0 // indirect

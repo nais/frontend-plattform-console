@@ -300,6 +300,8 @@ github.com/nais/liberator v0.0.0-20230316141356-e66bce2ef277 h1:SiNrYgpO6NbKkYv/
 github.com/nais/liberator v0.0.0-20230316141356-e66bce2ef277/go.mod h1:t6yQS5efQntGhFMYt3ibNa3uCJDNiWTzKy8rmruK6Mk=
 github.com/nais/unleasherator v0.0.0-20230328165909-2671918414ba h1:twUDAi3FxSnOjTIbaZVc3Qx1ALnSb+wGqsBrL/woe+s=
 github.com/nais/unleasherator v0.0.0-20230328165909-2671918414ba/go.mod h1:JjpJzxBF3mRN6Eu2Dfd25Civ0ZTmtnjbPnB8Rg/JIJk=
+github.com/nais/unleasherator v0.0.0-20230411085608-badce5d57be7 h1:GlTHKK6Z64BJD2XAi7Hj0lDXIZ1T8fglajqYEibyE5w=
+github.com/nais/unleasherator v0.0.0-20230411085608-badce5d57be7/go.mod h1:JjpJzxBF3mRN6Eu2Dfd25Civ0ZTmtnjbPnB8Rg/JIJk=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/onsi/ginkgo/v2 v2.4.0 h1:+Ig9nvqgS5OBSACXNk15PLdp0U9XPYROt9CFzVdFGIs=
 github.com/onsi/gomega v1.23.0 h1:/oxKu9c2HVap+F3PfKort2Hw5DEU+HGlW8n+tguWsys=
