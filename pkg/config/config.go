@@ -20,12 +20,20 @@ type ServerConfig struct {
 }
 
 type GoogleConfig struct {
-	ProjectID string `env:"BIFROST_GOOGLE_PROJECT_ID,required"`
+	ProjectID           string `env:"BIFROST_GOOGLE_PROJECT_ID,required"`
+	IAPBackendServiceID string `env:"BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID,required"`
 }
 
 type UnleashConfig struct {
-	InstanceNamespace string `env:"BIFROST_UNLEASH_INSTANCE_NAMESPACE,required"`
-	SQLInstanceID     string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ID,required"`
+	InstanceNamespace       string `env:"BIFROST_UNLEASH_INSTANCE_NAMESPACE,required"`
+	InstanceServiceaccount  string `env:"BIFROST_UNLEASH_INSTANCE_SERVICEACCOUNT,required"`
+	SQLInstanceID           string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ID,required"`
+	SQLInstanceRegion       string `env:"BIFROST_UNLEASH_SQL_INSTANCE_REGION,required"`
+	SQLInstanceAddress      string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ADDRESS,required"`
+	InstanceWebIngressHost  string `env:"BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_HOST,required"`
+	InstanceWebIngressClass string `env:"BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_CLASS,required"`
+	InstanceAPIIngressHost  string `env:"BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST,required"`
+	InstanceAPIIngressClass string `env:"BIFROST_UNLEASH_INSTANCE_API_INGRESS_CLASS,required"`
 }
 
 type Config struct {
