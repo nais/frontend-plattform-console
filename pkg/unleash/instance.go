@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
-	bifrostConfig "github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/config"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	admin "google.golang.org/api/sqladmin/v1beta4"
 	corev1 "k8s.io/api/core/v1"
@@ -93,15 +93,11 @@ func int64Ref(i int64) *int64 {
 }
 
 func createUnleashCrd(ctx context.Context,
-	bifrostConfig bifrostConfig.Config,
+	bifrostConfig config.Config,
 	databaseConfig unleashv1.DatabaseConfig,
 	teamName string,
 	projectName string,
 	googleIapAudience string,
-	webIngressHost string,
-	webIngressClass string,
-	apiIngressHost string,
-	apiIngressClass string,
 	apiIngress unleashv1.IngressConfig,
 	networkPolicy unleashv1.NetworkPolicyConfig,
 ) unleashv1.UnleashSpec {
@@ -122,19 +118,19 @@ func createUnleashCrd(ctx context.Context,
 		},
 		WebIngress: unleashv1.IngressConfig{
 			Enabled:     false,
-			Host:        fmt.Sprintf("%s-%s", teamName, webIngressHost),
+			Host:        fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceWebIngressHost),
 			Path:        "",
 			TLS:         &unleashv1.IngressTLSConfig{},
 			Annotations: map[string]string{},
-			Class:       webIngressClass,
+			Class:       bifrostConfig.Unleash.InstanceWebIngressClass,
 		},
 		ApiIngress: unleashv1.IngressConfig{
 			Enabled:     false,
-			Host:        fmt.Sprintf("%s-%s", teamName, apiIngressHost),
+			Host:        fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceAPIIngressHost),
 			Path:        "",
 			TLS:         &unleashv1.IngressTLSConfig{},
 			Annotations: map[string]string{},
-			Class:       apiIngressClass,
+			Class:       bifrostConfig.Unleash.InstanceAPIIngressClass,
 		},
 		NetworkPolicy: unleashv1.NetworkPolicyConfig{
 			Enabled:           true,
@@ -243,25 +239,31 @@ func createUnleashCrd(ctx context.Context,
 				AllowPrivilegeEscalation: boolRef(false),
 			},
 		}},
-		ExistingServiceAccountName: serviceAccountName,
+		ExistingServiceAccountName: bifrostConfig.Unleash.InstanceServiceaccount,
 		Resources:                  corev1.ResourceRequirements{},
 	}
 
 	return spec
 }
 
-func CreateInstance(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, databaseName string, kubeClient *kubernetes.Clientset, kubeNamespace string, namespace string) (Unleash, error) {
+func CreateInstance(ctx context.Context,
+	googleClient *admin.Service,
+	databaseInstance *admin.DatabaseInstance,
+	databaseName string,
+	config *config.Config,
+	kubeClient *kubernetes.Clientset,
+) (Unleash, error) {
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
-	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, kubeNamespace, databaseInstance, database, databaseUser)
-	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, kubeNamespace, database.Name)
+	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
+	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
 
 	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError); err != nil {
 		return Unleash{}, err
 	}
 
 	// TODO: create unleash instance
-	unleash := unleashv1.UnleashSpec{}
+	//	unleash := unleashv1.UnleashSpec{}
 
 	return Unleash{
 		TeamName:         databaseName,
