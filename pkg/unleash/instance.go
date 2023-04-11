@@ -185,7 +185,7 @@ func createUnleashCrd(ctx context.Context,
 						},
 					}},
 				},
-				{
+				{ // v these are google meta data servers
 					Ports: []networkingv1.NetworkPolicyPort{{
 						Protocol: (*corev1.Protocol)(&tcpProtocol),
 						Port:     &googleMetaDataPort,
