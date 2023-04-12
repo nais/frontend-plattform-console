@@ -12,9 +12,9 @@ require (
 	github.com/sirupsen/logrus v1.9.0
 	github.com/spf13/cobra v1.6.1
 	google.golang.org/api v0.114.0
-	k8s.io/api v0.26.3
-	k8s.io/apimachinery v0.26.3
-	k8s.io/client-go v0.26.3
+	k8s.io/api v0.27.0
+	k8s.io/apimachinery v0.27.0
+	k8s.io/client-go v0.27.0
 	sigs.k8s.io/controller-runtime v0.14.6
 )
 
@@ -64,7 +64,6 @@ require (
 	github.com/prometheus/client_model v0.3.0 // indirect
 	github.com/prometheus/common v0.42.0 // indirect
 	github.com/prometheus/procfs v0.9.0 // indirect
-	github.com/rogpeppe/go-internal v1.9.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/ugorji/go/codec v1.2.10 // indirect
 	go.opencensus.io v0.24.0 // indirect
