@@ -251,15 +251,15 @@ func CreateInstance(ctx context.Context,
 	config *config.Config,
 	kubeClient *kubernetes.Clientset,
 ) error {
-	iapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
+	//	iapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
 
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
 	secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
 	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
-	unleashDefinition := createUnleashCrd(config, databaseName, iapAudience)
-	createCrdError := createCrd(ctx, kubeClient, config, unleashDefinition, databaseName, iapAudience)
-	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError, createCrdError); err != nil {
+	// unleashDefinition := createUnleashCrd(config, databaseName, iapAudience)
+	//	createCrdError := createCrd(ctx, kubeClient, config, unleashDefinition, databaseName, iapAudience)
+	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError); err != nil {
 		return err
 	}
 	return nil
