@@ -13,6 +13,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -267,15 +268,17 @@ func CreateInstance(ctx context.Context,
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, teamName string) error {
 	protocolTCP := corev1.ProtocolTCP
 
+	typeMeta := metav1.TypeMeta{
+		Kind:       "FQDNNetworkPolicy",
+		APIVersion: "networking.gke.io/v1alpha3",
+	}
+
 	fqdn := v1alpha3.FQDNNetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      teamName,
 			Namespace: kubeNamespace,
 		},
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "FQDNNetworkPolicy",
-			APIVersion: "networking.gke.io/v1alpha3",
-		},
+		TypeMeta: typeMeta,
 		Spec: v1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -301,7 +304,12 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 			},
 		},
 	}
-	c, err := client.New(ctrl_config.GetConfigOrDie(), client.Options{})
+	schema := runtime.NewScheme()
+	schema.AddKnownTypes(typeMeta.GroupVersionKind().GroupVersion(), &v1alpha3.FQDNNetworkPolicy{})
+	opts := client.Options{
+		Scheme: schema,
+	}
+	c, err := client.New(ctrl_config.GetConfigOrDie(), opts)
 	if err != nil {
 		return err
 	}
