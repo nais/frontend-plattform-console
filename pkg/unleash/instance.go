@@ -262,7 +262,6 @@ func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *co
 		return fmt.Errorf("failed to create unleash crd, expected status 201 got %d", status)
 	}
 	return res.Error()
-
 }
 
 func CreateInstance(ctx context.Context,
