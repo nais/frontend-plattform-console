@@ -2,6 +2,7 @@ package unleash
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -215,8 +216,21 @@ func createUnleashCrd(
 }
 
 func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
+	body, err := json.Marshal(unleashDefinition)
+	if err != nil {
+		return err
+	}
 	status := 0
-	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(config.Unleash.InstanceNamespace).Body(&unleashDefinition).Do(ctx).StatusCode(&status)
+	res := kubeClient.
+		RESTClient().
+		Post().
+		Resource("unleash").
+		Namespace(config.Unleash.InstanceNamespace).
+		Name(databaseName).
+		Body(body).
+		Do(ctx).
+		StatusCode(&status)
+
 	if res.Error() != nil {
 		return res.Error()
 	}
@@ -280,9 +294,21 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 			},
 		},
 	}
+	body, err := json.Marshal(fqdn)
+	if err != nil {
+		return err
+	}
+
 	status := 0
-	// TODO: Use the actual client api instead of the rest client
-	res := kubeClient.RESTClient().Post().Resource("fqdnnetworkpolicies").Namespace(kubeNamespace).Body(&fqdn).Do(ctx).StatusCode(&status)
+	res := kubeClient.
+		RESTClient().
+		Post().
+		Resource("fqdnnetworkpolicies").
+		Namespace(kubeNamespace).
+		Name(teamName).
+		Body(body).
+		Do(ctx).
+		StatusCode(&status)
 	if res.Error() != nil {
 		return res.Error()
 	}
