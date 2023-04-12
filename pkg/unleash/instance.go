@@ -92,17 +92,17 @@ func int64Ref(i int64) *int64 {
 	return &intvar
 }
 
-func createUnleashCrd(ctx context.Context,
+func createUnleashCrd(
 	bifrostConfig *config.Config,
 	teamName string,
 	googleIapAudience string,
-) unleashv1.UnleashSpec {
+) unleashv1.Unleash {
 	tcpProtocol := "TCP"
 	cloudSql := intstr.FromInt(3307)
 	tlsPort := intstr.FromInt(443)
 	googleMetaDataPort := intstr.FromInt(988)
 	port80 := intstr.FromInt(80)
-	cloudsqlInstanceCidr := "cool-cidr"
+
 	spec := unleashv1.UnleashSpec{
 		Size: 0,
 		Database: unleashv1.DatabaseConfig{
@@ -140,7 +140,7 @@ func createUnleashCrd(ctx context.Context,
 					}},
 					To: []networkingv1.NetworkPolicyPeer{{
 						IPBlock: &networkingv1.IPBlock{
-							CIDR: cloudsqlInstanceCidr,
+							CIDR: fmt.Sprintf("%s/32", bifrostConfig.Unleash.SQLInstanceAddress),
 						},
 					}},
 				}, // v These are gstatic.com ips
@@ -241,7 +241,28 @@ func createUnleashCrd(ctx context.Context,
 		Resources:                  corev1.ResourceRequirements{},
 	}
 
-	return spec
+	return unleashv1.Unleash{
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Unleash",
+			APIVersion: "unleash.nais.io/v1",
+		},
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      teamName,
+			Namespace: bifrostConfig.Unleash.InstanceNamespace,
+		},
+		Spec: spec,
+	}
+}
+
+func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
+	status := 0
+	unleash := createUnleashCrd(config, databaseName, iapAudience)
+	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(config.Unleash.InstanceNamespace).Body(&unleash).Do(ctx).StatusCode(&status)
+	if status != 201 {
+		return fmt.Errorf("failed to create unleash crd, expected status 201 got %d", status)
+	}
+	return res.Error()
+
 }
 
 func CreateInstance(ctx context.Context,
@@ -251,24 +272,18 @@ func CreateInstance(ctx context.Context,
 	config *config.Config,
 	kubeClient *kubernetes.Clientset,
 ) error {
+	iapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
+
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
 	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
 	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
-
-	IapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
-
-	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError); err != nil {
+	unleashDefinition := createUnleashCrd(config, databaseName, iapAudience)
+	createCrdError := createCrd(ctx, kubeClient, config, unleashDefinition, databaseName, iapAudience)
+	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError, createCrdError); err != nil {
 		return err
 	}
-
-	status := 0
-	unleash := createUnleashCrd(ctx, config, databaseName, IapAudience)
-	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(config.Unleash.InstanceNamespace).Body(&unleash).Do(ctx).StatusCode(&status)
-	if status != 201 {
-		return (errors.New("failed to create unleash crd"))
-	}
-	return res.Error()
+	return nil
 }
 
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, teamName string) error {
