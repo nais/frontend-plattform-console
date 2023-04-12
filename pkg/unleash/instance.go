@@ -15,6 +15,8 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Unleash struct {
@@ -224,6 +226,7 @@ func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *co
 	res := kubeClient.
 		RESTClient().
 		Post().
+		AbsPath("/apis/unleash.nais.io/v1/unleash").
 		Resource("unleash").
 		Namespace(config.Unleash.InstanceNamespace).
 		Name(databaseName).
@@ -269,6 +272,10 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 			Name:      teamName,
 			Namespace: kubeNamespace,
 		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "FQDNNetworkPolicy",
+			APIVersion: "networking.gke.io/v1alpha3",
+		},
 		Spec: v1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
@@ -294,26 +301,13 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 			},
 		},
 	}
-	body, err := json.Marshal(fqdn)
+	c, err := client.New(ctrl_config.GetConfigOrDie(), client.Options{})
 	if err != nil {
 		return err
 	}
-
-	status := 0
-	res := kubeClient.
-		RESTClient().
-		Post().
-		Resource("fqdnnetworkpolicies").
-		Namespace(kubeNamespace).
-		Name(teamName).
-		Body(body).
-		Do(ctx).
-		StatusCode(&status)
-	if res.Error() != nil {
-		return res.Error()
+	err = c.Create(ctx, &fqdn)
+	if err != nil {
+		return err
 	}
-	if status != 201 {
-		return (errors.New("failed to create fqdnnetworkpolicy resource"))
-	}
-	return res.Error()
+	return nil
 }
