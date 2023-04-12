@@ -226,6 +226,7 @@ func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *co
 		Post().
 		Resource("unleash").
 		Namespace(config.Unleash.InstanceNamespace).
+		Name(databaseName).
 		Body(body).
 		Do(ctx).
 		StatusCode(&status)
@@ -304,6 +305,7 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 		Post().
 		Resource("fqdnnetworkpolicies").
 		Namespace(kubeNamespace).
+		Name(teamName).
 		Body(body).
 		Do(ctx).
 		StatusCode(&status)
