@@ -264,9 +264,9 @@ func CreateInstance(ctx context.Context,
 
 	status := 0
 	unleash := createUnleashCrd(ctx, config, databaseName, IapAudience)
-	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(kubeNamespace).Body(&unleash).Do(ctx).StatusCode(&status)
+	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(config.Unleash.InstanceNamespace).Body(&unleash).Do(ctx).StatusCode(&status)
 	if status != 201 {
-		return (errors.New("Failed to create unleash crd"))
+		return (errors.New("failed to create unleash crd"))
 	}
 	return res.Error()
 }
@@ -308,7 +308,7 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 	// TODO: Use the actual client api instead of the rest client
 	res := kubeClient.RESTClient().Post().Resource("fqdnnetworkpolicies").Namespace(kubeNamespace).Body(&fqdn).Do(ctx).StatusCode(&status)
 	if status != 201 {
-		return (errors.New("Failed to create fqdnnetworkpolicy resource"))
+		return (errors.New("failed to create fqdnnetworkpolicy resource"))
 	}
 	return res.Error()
 }
