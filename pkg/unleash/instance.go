@@ -112,25 +112,20 @@ func createUnleashCrd(
 			SecretDatabaseNameKey: "POSTGRES_DB",
 		},
 		WebIngress: unleashv1.IngressConfig{
-			Enabled:     false,
-			Host:        fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceWebIngressHost),
-			Path:        "",
-			TLS:         &unleashv1.IngressTLSConfig{},
-			Annotations: map[string]string{},
-			Class:       bifrostConfig.Unleash.InstanceWebIngressClass,
+			Enabled: true,
+			Host:    fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceWebIngressHost),
+			Path:    "/",
+			Class:   bifrostConfig.Unleash.InstanceWebIngressClass,
 		},
 		ApiIngress: unleashv1.IngressConfig{
-			Enabled:     false,
-			Host:        fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceAPIIngressHost),
-			Path:        "",
-			TLS:         &unleashv1.IngressTLSConfig{},
-			Annotations: map[string]string{},
-			Class:       bifrostConfig.Unleash.InstanceAPIIngressClass,
+			Enabled: true,
+			Host:    fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceAPIIngressHost),
+			Path:    "/api",
+			Class:   bifrostConfig.Unleash.InstanceAPIIngressClass,
 		},
 		NetworkPolicy: unleashv1.NetworkPolicyConfig{
-			Enabled:           true,
-			AllowDNS:          true,
-			ExtraIngressRules: []networkingv1.NetworkPolicyIngressRule{},
+			Enabled:  true,
+			AllowDNS: true,
 			ExtraEgressRules: []networkingv1.NetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{{
@@ -183,9 +178,8 @@ func createUnleashCrd(
 			Value: googleIapAudience,
 		}},
 		ExtraContainers: []corev1.Container{{
-			Name:    "sql-proxy",
-			Image:   bifrostConfig.CloudConnectorProxy,
-			Command: []string{},
+			Name:  "sql-proxy",
+			Image: bifrostConfig.CloudConnectorProxy,
 			Args: []string{
 				"--structured-logs",
 				"--port=5432",
