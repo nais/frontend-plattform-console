@@ -283,6 +283,9 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 	status := 0
 	// TODO: Use the actual client api instead of the rest client
 	res := kubeClient.RESTClient().Post().Resource("fqdnnetworkpolicies").Namespace(kubeNamespace).Body(&fqdn).Do(ctx).StatusCode(&status)
+	if res.Error() != nil {
+		return res.Error()
+	}
 	if status != 201 {
 		return (errors.New("failed to create fqdnnetworkpolicy resource"))
 	}
