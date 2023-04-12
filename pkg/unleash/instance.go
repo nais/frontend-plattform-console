@@ -93,13 +93,9 @@ func int64Ref(i int64) *int64 {
 }
 
 func createUnleashCrd(ctx context.Context,
-	bifrostConfig config.Config,
-	databaseConfig unleashv1.DatabaseConfig,
+	bifrostConfig *config.Config,
 	teamName string,
-	projectName string,
 	googleIapAudience string,
-	apiIngress unleashv1.IngressConfig,
-	networkPolicy unleashv1.NetworkPolicyConfig,
 ) unleashv1.UnleashSpec {
 	tcpProtocol := "TCP"
 	cloudSql := intstr.FromInt(3307)
@@ -227,7 +223,9 @@ func createUnleashCrd(ctx context.Context,
 			Args: []string{
 				"--structured-logs",
 				"--port=5432",
-				projectName,
+				fmt.Sprintf("%s:%s:%s", bifrostConfig.Google.ProjectID,
+					bifrostConfig.Unleash.SQLInstanceRegion,
+					bifrostConfig.Unleash.SQLInstanceID),
 			},
 			SecurityContext: &corev1.SecurityContext{
 				Capabilities: &corev1.Capabilities{
@@ -252,25 +250,25 @@ func CreateInstance(ctx context.Context,
 	databaseName string,
 	config *config.Config,
 	kubeClient *kubernetes.Clientset,
-) (Unleash, error) {
+) error {
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
 	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
 	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
 
+	IapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
+
 	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError); err != nil {
-		return Unleash{}, err
+		return err
 	}
 
-	// TODO: create unleash instance
-	//	unleash := unleashv1.UnleashSpec{}
-
-	return Unleash{
-		TeamName:         databaseName,
-		DatabaseInstance: databaseInstance,
-		Database:         database,
-		DatabaseUser:     databaseUser,
-	}, nil
+	status := 0
+	unleash := createUnleashCrd(ctx, config, databaseName, IapAudience)
+	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(kubeNamespace).Body(&unleash).Do(ctx).StatusCode(&status)
+	if status != 201 {
+		return (errors.New("Failed to create unleash crd"))
+	}
+	return res.Error()
 }
 
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, teamName string) error {
@@ -310,7 +308,7 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 	// TODO: Use the actual client api instead of the rest client
 	res := kubeClient.RESTClient().Post().Resource("fqdnnetworkpolicies").Namespace(kubeNamespace).Body(&fqdn).Do(ctx).StatusCode(&status)
 	if status != 201 {
-		return (errors.New("Failed to created fqdnnetworkpolicy resource"))
+		return (errors.New("Failed to create fqdnnetworkpolicy resource"))
 	}
 	return res.Error()
 }
