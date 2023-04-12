@@ -99,7 +99,6 @@ func createUnleashCrd(
 ) unleashv1.Unleash {
 	tcpProtocol := "TCP"
 	cloudSql := intstr.FromInt(3307)
-	tlsPort := intstr.FromInt(443)
 	googleMetaDataPort := intstr.FromInt(988)
 	port80 := intstr.FromInt(80)
 
