@@ -217,10 +217,13 @@ func createUnleashCrd(
 func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
 	status := 0
 	res := kubeClient.RESTClient().Post().Resource("unleash").Namespace(config.Unleash.InstanceNamespace).Body(&unleashDefinition).Do(ctx).StatusCode(&status)
+	if res.Error() != nil {
+		return res.Error()
+	}
 	if status != 201 {
 		return fmt.Errorf("failed to create unleash crd, expected status 201 got %d", status)
 	}
-	return res.Error()
+	return nil
 }
 
 func CreateInstance(ctx context.Context,
