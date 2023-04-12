@@ -143,39 +143,6 @@ func createUnleashCrd(
 							CIDR: fmt.Sprintf("%s/32", bifrostConfig.Unleash.SQLInstanceAddress),
 						},
 					}},
-				}, // v These are gstatic.com ips
-				{
-					Ports: []networkingv1.NetworkPolicyPort{{
-						Protocol: (*corev1.Protocol)(&tcpProtocol),
-						Port:     &tlsPort,
-					}},
-					To: []networkingv1.NetworkPolicyPeer{{
-						IPBlock: &networkingv1.IPBlock{
-							CIDR: "142.250.74.35/32",
-						},
-					}},
-				},
-				{
-					Ports: []networkingv1.NetworkPolicyPort{{
-						Protocol: (*corev1.Protocol)(&tcpProtocol),
-						Port:     &tlsPort,
-					}},
-					To: []networkingv1.NetworkPolicyPeer{{
-						IPBlock: &networkingv1.IPBlock{
-							CIDR: "142.250.74.131/32",
-						},
-					}},
-				},
-				{
-					Ports: []networkingv1.NetworkPolicyPort{{
-						Protocol: (*corev1.Protocol)(&tcpProtocol),
-						Port:     &tlsPort,
-					}},
-					To: []networkingv1.NetworkPolicyPeer{{
-						IPBlock: &networkingv1.IPBlock{
-							CIDR: "216.58.211.3/32",
-						},
-					}},
 				},
 				{ // v these are google meta data servers
 					Ports: []networkingv1.NetworkPolicyPort{{
