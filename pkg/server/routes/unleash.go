@@ -59,7 +59,7 @@ func UnleashNewPost(c *gin.Context) {
 		return
 	}
 
-	_, err := unleash.CreateInstance(ctx, googleClient, SQLInstance, teamName, kubeClient, config.Unleash.InstanceNamespace)
+	err := unleash.CreateInstance(ctx, googleClient, SQLInstance, teamName, config, kubeClient)
 	if err != nil {
 		c.Error(err).
 			SetType(gin.ErrorTypePublic).
