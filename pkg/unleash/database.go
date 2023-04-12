@@ -101,7 +101,7 @@ func deleteDatabase(ctx context.Context, client *admin.Service, instance *admin.
 	return nil
 }
 
-func createDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset, namespace string, instance *admin.DatabaseInstance, database *admin.Database, user *admin.User) (*v1.Secret, error) {
+func createDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset, namespace string, instance *admin.DatabaseInstance, database *admin.Database, user *admin.User) error {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      database.Name,
@@ -116,7 +116,7 @@ func createDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset,
 	}
 
 	_, err := client.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
-	return secret, err
+	return err
 }
 
 func deleteDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset, namespace string, databaseName string) error {

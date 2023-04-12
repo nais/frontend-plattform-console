@@ -234,7 +234,7 @@ func CreateInstance(ctx context.Context,
 
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
-	_, secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
+	secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
 	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
 	unleashDefinition := createUnleashCrd(config, databaseName, iapAudience)
 	createCrdError := createCrd(ctx, kubeClient, config, unleashDefinition, databaseName, iapAudience)
