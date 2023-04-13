@@ -17,6 +17,10 @@ bifrost:
 test:
 	go test ./...
 
+.PHONY: start
+start:
+	go run main.go run
+
 .PHONY: fmt
 fmt: gofumpt
 	$(GOFUMPT) -w ./

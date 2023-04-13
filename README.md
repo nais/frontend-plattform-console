@@ -28,3 +28,38 @@ Bifröst is configured using environment variables. The following variables are 
 | -------- |  ------- |
 | `BIFROST_GOOGLE_PROJECT_ID` | The Google Cloud project ID |
 | `BIFROST_UNLEASH_SQL_INSTANCE_ID` | The SQL instance ID for Unleash databases |
+
+## Local development
+
+### Prerequisite
+
+* Google Cloud Service Account
+* Local Kubernets Cluster
+  * Unleasherator CRD
+  * FQDNNetworkPolicy CRD
+
+Apply the required custom resource definitions:
+
+```bash
+kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/main/config/crd/bases/networking.gke.io_fqdnnetworkpolicies.yaml
+kubectl apply -f https://raw.githubusercontent.com/nais/unleasherator/main/config/crd/bases/unleash.nais.io_unleashes.yaml
+```
+
+### Enviornment variables
+
+The following environment variables needs to be set:
+
+| Variable | Value | Description |
+| -------- |  ---- | ----------- |
+| `BIFROST_HOST` | `127.0.0.1` | |
+| `BIFROST_GOOGLE_PROJECT_ID` | The Google Cloud project ID |
+| `BIFROST_UNLEASH_SQL_INSTANCE_ID` | The SQL instance ID for Unleash databases |
+| `BIFROST_UNLEASH_INSTANCE_NAMESPACE` | `default` | |
+| `GOOGLE_APPLICATION_CREDENTIALS` | <path-to-file> | |
+| `KUBECONFIG` | <path-to-file> | |
+
+### Start the server
+
+```
+make start
+```
