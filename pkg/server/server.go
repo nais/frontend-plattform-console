@@ -8,7 +8,7 @@ import (
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/config"
-	"github.com/nais/bifrost/pkg/server/routes"
+	"github.com/nais/bifrost/pkg/handler"
 	"github.com/nais/bifrost/pkg/server/utils"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
@@ -106,16 +106,9 @@ func Run(config *config.Config) {
 		log.Fatal(err)
 	}
 
-	router.Use(func(c *gin.Context) {
-		c.Set("config", config)
-		c.Set("log", log)
-		c.Set("kubeClient", kubeClient)
-		c.Set("googleClient", googleClient)
-		c.Set("unleashSQLInstance", unleashInstance)
-		c.Next()
-	})
+	h := handler.NewHandler(kubeClient, googleClient, config, unleashInstance, log)
 
-	router.Use(routes.ErrorHandler)
+	router.Use(h.ErrorHandler)
 	router.Static("/assets", "./assets")
 
 	router.HTMLRender = utils.LoadTemplates("./templates")
@@ -125,20 +118,20 @@ func Run(config *config.Config) {
 		})
 	})
 
-	router.GET("/healthz", routes.HealthHandler)
+	router.GET("/healthz", h.HealthHandler)
 
 	unleash := router.Group("/unleash")
 	{
-		unleash.GET("/", routes.UnleashIndex)
-		unleash.GET("/new", routes.UnleashNew)
-		unleash.POST("/new", routes.UnleashNewPost)
+		unleash.GET("/", h.UnleashIndex)
+		unleash.GET("/new", h.UnleashNew)
+		unleash.POST("/new", h.UnleashNewPost)
 
 		unleashInstance := unleash.Group("/:id")
-		unleashInstance.Use(routes.UnleashInstanceMiddleware)
+		unleashInstance.Use(h.UnleashInstanceMiddleware)
 		{
-			unleashInstance.GET("/", routes.UnleashInstanceShow)
-			unleashInstance.GET("/delete", routes.UnleashInstanceDelete)
-			unleashInstance.POST("/delete", routes.UnleashInstanceDeletePost)
+			unleashInstance.GET("/", h.UnleashInstanceShow)
+			unleashInstance.GET("/delete", h.UnleashInstanceDelete)
+			unleashInstance.POST("/delete", h.UnleashInstanceDeletePost)
 		}
 	}
 

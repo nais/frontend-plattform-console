@@ -217,7 +217,6 @@ func createUnleashSpec(
 }
 
 func createUnleashCrd(ctx context.Context, kubeClient ctrl.Client, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
-
 	schema := runtime.NewScheme()
 	unleashv1.AddToScheme(schema)
 	opts := ctrl.Options{
@@ -233,7 +232,6 @@ func createUnleashCrd(ctx context.Context, kubeClient ctrl.Client, config *confi
 		return err
 	}
 	return nil
-
 }
 
 func CreateInstance(ctx context.Context,
