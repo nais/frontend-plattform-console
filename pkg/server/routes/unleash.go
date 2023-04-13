@@ -2,6 +2,7 @@ package routes
 
 import (
 	"regexp"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	"text/template"
 
 	"github.com/gin-gonic/gin"
@@ -9,7 +10,6 @@ import (
 	"github.com/nais/bifrost/pkg/unleash"
 	"github.com/sirupsen/logrus"
 	admin "google.golang.org/api/sqladmin/v1beta4"
-	"k8s.io/client-go/kubernetes"
 )
 
 func UnleashIndex(c *gin.Context) {
@@ -48,7 +48,7 @@ func UnleashNewPost(c *gin.Context) {
 
 	config := c.MustGet("config").(*config.Config)
 	googleClient := c.MustGet("googleClient").(*admin.Service)
-	kubeClient := c.MustGet("kubeClient").(*kubernetes.Clientset)
+	kubeClient := c.MustGet("kubeClient").(ctrl.Client)
 	SQLInstance := c.MustGet("unleashSQLInstance").(*admin.DatabaseInstance)
 
 	if teamName == "" {
@@ -120,8 +120,7 @@ func UnleashInstanceDelete(c *gin.Context) {
 func UnleashInstanceDeletePost(c *gin.Context) {
 	ctx := c.Request.Context()
 	teamName := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("team-name"), "")
-
-	kubeClient := c.MustGet("kubeClient").(*kubernetes.Clientset)
+	kubeClient := c.MustGet("kubeClient").(ctrl.Client)
 	googleClient := c.MustGet("googleClient").(*admin.Service)
 	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
 

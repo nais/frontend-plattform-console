@@ -14,7 +14,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
-	"k8s.io/client-go/kubernetes"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrl_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
@@ -39,7 +38,7 @@ func (u *Unleash) GetDatabaseUser(ctx context.Context, client *admin.Service) er
 	return nil
 }
 
-func (u *Unleash) Delete(ctx context.Context, googleClient *admin.Service, kubeClient *kubernetes.Clientset) error {
+func (u *Unleash) Delete(ctx context.Context, googleClient *admin.Service, kubeClient ctrl.Client) error {
 	dbUserErr := deleteDatabaseUser(ctx, googleClient, u.DatabaseInstance, u.Database.Name)
 	dbErr := deleteDatabase(ctx, googleClient, u.DatabaseInstance, u.Database.Name)
 	dbUserSecretErr := deleteDatabaseUserSecret(ctx, kubeClient, u.KubernetesNamespace, u.Database.Name)
@@ -217,7 +216,7 @@ func createUnleashSpec(
 	}
 }
 
-func createUnleashCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
+func createUnleashCrd(ctx context.Context, kubeClient ctrl.Client, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
 
 	schema := runtime.NewScheme()
 	unleashv1.AddToScheme(schema)
@@ -242,7 +241,7 @@ func CreateInstance(ctx context.Context,
 	databaseInstance *admin.DatabaseInstance,
 	databaseName string,
 	config *config.Config,
-	kubeClient *kubernetes.Clientset,
+	kubeClient ctrl.Client,
 ) error {
 	iapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
 
@@ -258,7 +257,7 @@ func CreateInstance(ctx context.Context,
 	return nil
 }
 
-func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clientset, kubeNamespace string, teamName string) error {
+func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
 	protocolTCP := corev1.ProtocolTCP
 
 	typeMeta := metav1.TypeMeta{
