@@ -2,11 +2,10 @@ package unleash
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 
-	"github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
+	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/nais/bifrost/pkg/config"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	admin "google.golang.org/api/sqladmin/v1beta4"
@@ -16,7 +15,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"k8s.io/client-go/kubernetes"
-	"sigs.k8s.io/controller-runtime/pkg/client"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 	ctrl_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
@@ -96,7 +95,7 @@ func int64Ref(i int64) *int64 {
 	return &intvar
 }
 
-func createUnleashCrd(
+func createUnleashSpec(
 	bifrostConfig *config.Config,
 	teamName string,
 	googleIapAudience string,
@@ -218,30 +217,24 @@ func createUnleashCrd(
 	}
 }
 
-func createCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
-	body, err := json.Marshal(unleashDefinition)
+func createUnleashCrd(ctx context.Context, kubeClient *kubernetes.Clientset, config *config.Config, unleashDefinition unleashv1.Unleash, databaseName string, iapAudience string) error {
+
+	schema := runtime.NewScheme()
+	unleashv1.AddToScheme(schema)
+	opts := ctrl.Options{
+		Scheme: schema,
+	}
+	c, err := ctrl.New(ctrl_config.GetConfigOrDie(), opts)
 	if err != nil {
 		return err
 	}
-	status := 0
-	res := kubeClient.
-		RESTClient().
-		Post().
-		AbsPath("/apis/unleash.nais.io/v1/unleash").
-		Resource("unleash").
-		Namespace(config.Unleash.InstanceNamespace).
-		Name(databaseName).
-		Body(body).
-		Do(ctx).
-		StatusCode(&status)
 
-	if res.Error() != nil {
-		return res.Error()
-	}
-	if status != 201 {
-		return fmt.Errorf("failed to create unleash crd, expected status 201 got %d", status)
+	err = c.Create(ctx, &unleashDefinition)
+	if err != nil {
+		return err
 	}
 	return nil
+
 }
 
 func CreateInstance(ctx context.Context,
@@ -251,15 +244,15 @@ func CreateInstance(ctx context.Context,
 	config *config.Config,
 	kubeClient *kubernetes.Clientset,
 ) error {
-	//	iapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
+	iapAudience := fmt.Sprintf("/projects/%s/global/backendServices/%s", config.Google.ProjectID, config.Google.IAPBackendServiceID)
 
 	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
 	secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
 	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
-	// unleashDefinition := createUnleashCrd(config, databaseName, iapAudience)
-	//	createCrdError := createCrd(ctx, kubeClient, config, unleashDefinition, databaseName, iapAudience)
-	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError); err != nil {
+	unleashSpec := createUnleashSpec(config, databaseName, iapAudience)
+	createCrdError := createUnleashCrd(ctx, kubeClient, config, unleashSpec, databaseName, iapAudience)
+	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError, createCrdError); err != nil {
 		return err
 	}
 	return nil
@@ -273,13 +266,13 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 		APIVersion: "networking.gke.io/v1alpha3",
 	}
 
-	fqdn := v1alpha3.FQDNNetworkPolicy{
+	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      teamName,
 			Namespace: kubeNamespace,
 		},
 		TypeMeta: typeMeta,
-		Spec: v1alpha3.FQDNNetworkPolicySpec{
+		Spec: fqdnV1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/instance":   teamName,
@@ -287,7 +280,7 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 					"app.kubernetes.io/created-by": "controller-manager",
 				},
 			},
-			Egress: []v1alpha3.FQDNNetworkPolicyEgressRule{
+			Egress: []fqdnV1alpha3.FQDNNetworkPolicyEgressRule{
 				{
 					Ports: []networkingv1.NetworkPolicyPort{
 						{
@@ -295,7 +288,7 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 							Protocol: &protocolTCP,
 						},
 					},
-					To: []v1alpha3.FQDNNetworkPolicyPeer{
+					To: []fqdnV1alpha3.FQDNNetworkPolicyPeer{
 						{
 							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com"},
 						},
@@ -305,14 +298,15 @@ func createFQDNNetworkPolicy(ctx context.Context, kubeClient *kubernetes.Clients
 		},
 	}
 	schema := runtime.NewScheme()
-	schema.AddKnownTypes(typeMeta.GroupVersionKind().GroupVersion(), &v1alpha3.FQDNNetworkPolicy{})
-	opts := client.Options{
+	fqdnV1alpha3.AddToScheme(schema)
+	opts := ctrl.Options{
 		Scheme: schema,
 	}
-	c, err := client.New(ctrl_config.GetConfigOrDie(), opts)
+	c, err := ctrl.New(ctrl_config.GetConfigOrDie(), opts)
 	if err != nil {
 		return err
 	}
+
 	err = c.Create(ctx, &fqdn)
 	if err != nil {
 		return err
