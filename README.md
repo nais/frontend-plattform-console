@@ -24,42 +24,58 @@ Bifröst needs the following Google Cloud resources:
 
 Bifröst is configured using environment variables. The following variables are required:
 
+### Google Configuration
+
 | Variable | Description |
 | -------- |  ------- |
 | `BIFROST_GOOGLE_PROJECT_ID` | The Google Cloud project ID |
+| `BIFROST_GOOGLE_PROJECT_NUMBER` | The Google Cloud project number |
+| `BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID` | The Google Cloud IAP backend service ID |
+
+### Unleash Configuration**
+
+| Variable | Description |
+| -------- |  ------- |
+| `BIFROST_UNLEASH_INSTANCE_NAMESPACE` | The Kubernetes namespace where Unleash instances are deployed |
+| `BIFROST_UNLEASH_INSTANCE_SERVICE_ACCOUNT` | The Kubernetes service account used by Unleash instances |
 | `BIFROST_UNLEASH_SQL_INSTANCE_ID` | The SQL instance ID for Unleash databases |
+| `BIFROST_UNLEASH_SQL_INSTANCE_REGION` | The SQL instance region for Unleash databases |
+| `BIFROST_UNLEASH_SQL_INSTANCE_ADDRESS` | The SQL instance address for Unleash databases |
+| `BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_HOST` | The ingress host for Unleash instances Web UI |
+| `BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_CLASS` | The ingress class for Unleash instances Web UI |
+| `BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST` | The ingress host for Unleash instances API |
+| `BIFROST_UNLEASH_INSTANCE_API_INGRESS_CLASS` | The ingress class for Unleash instances API |
 
 ## Local development
 
 ### Prerequisite
 
 * Google Cloud Service Account
-* Local Kubernets Cluster
-  * Unleasherator CRD
-  * FQDNNetworkPolicy CRD
+* Local Kubernetes Cluster
 
-Apply the required custom resource definitions:
+With you local Kubernetes cluster apply the required custom resource definitions:
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/main/config/crd/bases/networking.gke.io_fqdnnetworkpolicies.yaml
 kubectl apply -f https://raw.githubusercontent.com/nais/unleasherator/main/config/crd/bases/unleash.nais.io_unleashes.yaml
 ```
 
-### Enviornment variables
+### Environment variables
 
-The following environment variables needs to be set:
+The following environment variables needs to be set in addition to the configuration variables above:
 
 | Variable | Value | Description |
 | -------- |  ---- | ----------- |
-| `BIFROST_HOST` | `127.0.0.1` | |
-| `BIFROST_GOOGLE_PROJECT_ID` | The Google Cloud project ID |
-| `BIFROST_UNLEASH_SQL_INSTANCE_ID` | The SQL instance ID for Unleash databases |
-| `BIFROST_UNLEASH_INSTANCE_NAMESPACE` | `default` | |
-| `GOOGLE_APPLICATION_CREDENTIALS` | <path-to-file> | |
-| `KUBECONFIG` | <path-to-file> | |
+| `BIFROST_SERVER_HOST` | `127.0.0.1` | The host for the Bifröst server |
+| `GOOGLE_APPLICATION_CREDENTIALS` | <path-to-file> | Google Cloud service account credentials |
+| `KUBECONFIG` | <path-to-file> | Path to Kubernetes configuration file |
 
 ### Start the server
 
-```
+```shell
 make start
 ```
+
+## License
+
+[MIT](LICENSE)
