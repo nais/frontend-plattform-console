@@ -20,6 +20,13 @@ Bifröst needs the following Google Cloud resources:
 
 * A Google Cloud PostgreSQL instance for Unleash databases
 
+### Kubernetes Resources
+
+Bifröst needs the following Kubernetes resources:
+
+* [Unleasherator](https://github.com/nais/unleasherator)
+* [FQDN Network Policy Operator](https://github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang)
+
 ## Configuration
 
 Bifröst is configured using environment variables. The following variables are required:
