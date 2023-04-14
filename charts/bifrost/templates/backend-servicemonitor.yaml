@@ -1,0 +1,17 @@
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "bifrost.fullname" . }}
+  labels: {{- include "bifrost.labels" . | nindent 4 }}
+spec:
+  endpoints:
+  - interval: 1m
+    port: http
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      {{- include "bifrost.selectorLabels" . | nindent 6 }}

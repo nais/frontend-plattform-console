@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "bifrost.fullname" . }}-backend
+  labels:
+    {{- include "bifrost.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "bifrost.selectorLabels" . | nindent 6 }}
+      component: backend
+  template:
+    metadata:
+      labels:
+        {{- include "bifrost.selectorLabels" . | nindent 8 }}
+        component: backend
+      annotations:
+        kubectl.kubernetes.io/default-container: {{ .Chart.Name }}
+    spec:
+      serviceAccountName: {{ include "bifrost.name" . }}
+      securityContext:
+        seccompProfile:
+          type: RuntimeDefault
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.backend.image.repository }}:{{ .Values.backend.image.tag }}"
+          imagePullPolicy: {{ .Values.backend.image.pullPolicy }}
+          command: ["/app/bifrost", "run"]
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1000
+            runAsGroup: 1000
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          env:
+            # Top level
+            - name: BIFROST_PORT
+              value: "8080"
+            - name: BIFROST_HOST
+              value: "0.0.0.0"
+            # Google
+            - name: BIFROST_GOOGLE_PROJECT_ID
+              value: {{ .Values.backend.google.projectId | quote }}
+            - name: BIFROST_GOOGLE_PROJECT_NUMBER
+              value: {{ .Values.backend.google.projectNumber | quote }}
+            - name: BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID
+              value: {{ .Values.backend.google.iapBackendServiceId | quote }}
+            # Unleash
+            - name: BIFROST_UNLEASH_SQL_INSTANCE_ID
+              value: {{ .Values.backend.unleash.sqlInstanceId | quote }}
+            - name: BIFROST_UNLEASH_SQL_INSTANCE_ADDRESS
+              value: {{ .Values.backend.unleash.sqlInstanceAddress | quote }}
+            - name: BIFROST_UNLEASH_SQL_INSTANCE_REGION
+              value: {{ .Values.backend.unleash.sqlInstanceRegion | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_NAMESPACE
+              value: {{ .Values.backend.unleash.instanceNamespace | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_SERVICEACCOUNT
+              value: {{ .Values.backend.unleash.kubernetesServiceAccountName | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_CLASS
+              value: {{ .Values.backend.unleash.webIngressClass | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_HOST
+              value: {{ .Values.backend.unleash.webIngressHost | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_API_INGRESS_CLASS
+              value: {{ .Values.backend.unleash.apiIngressClass | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST
+              value: {{ .Values.backend.unleash.apiIngressHost | quote }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /healthz
+              port: http
+          resources:
+            {{- toYaml .Values.backend.resources | nindent 12 }}

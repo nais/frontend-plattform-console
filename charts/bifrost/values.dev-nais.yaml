@@ -1,0 +1,9 @@
+backend:
+  unleash:
+    sqlInstanceId: bifrost-79ca6928
+  google:
+    projectId: "718161667033"
+    serviceAccountEmail: bifrost@nais-management-7178.iam.gserviceaccount.com
+
+ingress:
+  host: bifrost.dev-nais.cloud.nais.io
