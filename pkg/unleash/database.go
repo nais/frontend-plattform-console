@@ -8,8 +8,7 @@ import (
 	admin "google.golang.org/api/sqladmin/v1beta4"
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"k8s.io/client-go/kubernetes"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func createDatabase(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) (*admin.Database, error) {
@@ -101,11 +100,15 @@ func deleteDatabase(ctx context.Context, client *admin.Service, instance *admin.
 	return nil
 }
 
-func createDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset, namespace string, instance *admin.DatabaseInstance, database *admin.Database, user *admin.User) error {
+func createDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace string, instance *admin.DatabaseInstance, database *admin.Database, user *admin.User) error {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      database.Name,
 			Namespace: namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
 		},
 		Data: map[string][]byte{
 			"POSTGRES_USER":     []byte(database.Name),
@@ -115,10 +118,20 @@ func createDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset,
 		},
 	}
 
-	_, err := client.CoreV1().Secrets(namespace).Create(ctx, secret, metav1.CreateOptions{})
+	err := client.Create(ctx, secret)
 	return err
 }
 
-func deleteDatabaseUserSecret(ctx context.Context, client *kubernetes.Clientset, namespace string, databaseName string) error {
-	return client.CoreV1().Secrets(namespace).Delete(ctx, databaseName, metav1.DeleteOptions{})
+func deleteDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace string, databaseName string) error {
+	secret := &v1.Secret{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      databaseName,
+			Namespace: namespace,
+		},
+		TypeMeta: metav1.TypeMeta{
+			Kind:       "Secret",
+			APIVersion: "v1",
+		},
+	}
+	return client.Delete(ctx, secret)
 }

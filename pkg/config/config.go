@@ -42,7 +42,7 @@ type Config struct {
 	Google              GoogleConfig
 	Unleash             UnleashConfig
 	DebugMode           bool
-	CloudConnectorProxy string `env:"BIFROST_UNLEASH_SQL_INSTANCE_ID,default=gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0"`
+	CloudConnectorProxy string `env:"BIFROST_CLOUD_CONNECTOR_PROXY_IMAGE,default=gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0"`
 }
 
 func (c *Config) GetServerAddr() string {

@@ -5,15 +5,19 @@ import (
 	"fmt"
 	"os"
 
+	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/config"
-	"github.com/nais/bifrost/pkg/server/routes"
+	"github.com/nais/bifrost/pkg/handler"
 	"github.com/nais/bifrost/pkg/server/utils"
+	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
 	admin "google.golang.org/api/sqladmin/v1beta4"
-	"k8s.io/client-go/kubernetes"
+	"k8s.io/apimachinery/pkg/runtime"
+	client_go_scheme "k8s.io/client-go/kubernetes/scheme"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
+	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
 func initGoogleClient(ctx context.Context) (*admin.Service, error) {
@@ -38,15 +42,22 @@ func initUnleashSQLInstance(ctx context.Context, client *admin.Service, config *
 	return instance, nil
 }
 
-func initKubenetesClient() (*kubernetes.Clientset, error) {
-	var kubeClient *kubernetes.Clientset
-
+func initKubenetesClient() (ctrl.Client, error) {
+	var kubeClient ctrl.Client
+	schema := runtime.NewScheme()
+	fqdnV1alpha3.AddToScheme(schema)
+	unleashv1.AddToScheme(schema)
+	client_go_scheme.AddToScheme(schema)
+	opts := ctrl.Options{
+		Scheme: schema,
+	}
 	if kubeconfig := os.Getenv("KUBECONFIG"); kubeconfig != "" {
 		config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
 			return nil, err
 		}
-		kubeClient, err = kubernetes.NewForConfig(config)
+
+		kubeClient, err = ctrl.New(config, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -55,7 +66,7 @@ func initKubenetesClient() (*kubernetes.Clientset, error) {
 		if err != nil {
 			return nil, err
 		}
-		kubeClient, err = kubernetes.NewForConfig(config)
+		kubeClient, err = ctrl.New(config, opts)
 		if err != nil {
 			return nil, err
 		}
@@ -95,16 +106,9 @@ func Run(config *config.Config) {
 		log.Fatal(err)
 	}
 
-	router.Use(func(c *gin.Context) {
-		c.Set("config", config)
-		c.Set("log", log)
-		c.Set("kubeClient", kubeClient)
-		c.Set("googleClient", googleClient)
-		c.Set("unleashSQLInstance", unleashInstance)
-		c.Next()
-	})
+	h := handler.NewHandler(kubeClient, googleClient, config, unleashInstance, log)
 
-	router.Use(routes.ErrorHandler)
+	router.Use(h.ErrorHandler)
 	router.Static("/assets", "./assets")
 
 	router.HTMLRender = utils.LoadTemplates("./templates")
@@ -114,20 +118,20 @@ func Run(config *config.Config) {
 		})
 	})
 
-	router.GET("/healthz", routes.HealthHandler)
+	router.GET("/healthz", h.HealthHandler)
 
 	unleash := router.Group("/unleash")
 	{
-		unleash.GET("/", routes.UnleashIndex)
-		unleash.GET("/new", routes.UnleashNew)
-		unleash.POST("/new", routes.UnleashNewPost)
+		unleash.GET("/", h.UnleashIndex)
+		unleash.GET("/new", h.UnleashNew)
+		unleash.POST("/new", h.UnleashNewPost)
 
 		unleashInstance := unleash.Group("/:id")
-		unleashInstance.Use(routes.UnleashInstanceMiddleware)
+		unleashInstance.Use(h.UnleashInstanceMiddleware)
 		{
-			unleashInstance.GET("/", routes.UnleashInstanceShow)
-			unleashInstance.GET("/delete", routes.UnleashInstanceDelete)
-			unleashInstance.POST("/delete", routes.UnleashInstanceDeletePost)
+			unleashInstance.GET("/", h.UnleashInstanceShow)
+			unleashInstance.GET("/delete", h.UnleashInstanceDelete)
+			unleashInstance.POST("/delete", h.UnleashInstanceDeletePost)
 		}
 	}
 
