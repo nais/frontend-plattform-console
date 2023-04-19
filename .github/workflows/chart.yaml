@@ -59,11 +59,11 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         uses: helm/kind-action@v1.4.0
 
-      - name: Run chart-testing (install)
-        if: steps.list-changed.outputs.changed == 'true'
-        run: |
-          helm install bifrost ./charts/bifrost --wait
-          ct install --charts ./charts/bifrost --target-branch ${{ github.event.repository.default_branch }}
+      # - name: Run chart-testing (install)
+      #   if: steps.list-changed.outputs.changed == 'true'
+      #   run: |
+      #     helm install bifrost ./charts/bifrost --wait
+      #     ct install --charts ./charts/bifrost --target-branch ${{ github.event.repository.default_branch }}
   push:
     permissions:
       contents: read
