@@ -53,7 +53,7 @@ jobs:
 
       - name: Run chart-testing (lint)
         if: steps.list-changed.outputs.changed == 'true'
-        run: ct lint --target-branch ${{ github.event.repository.default_branch }}
+        run: ct lint --target-branch ${ GITHUB_REF##*/ }
 
       - name: Create kind cluster
         if: steps.list-changed.outputs.changed == 'true'
@@ -63,7 +63,7 @@ jobs:
         if: steps.list-changed.outputs.changed == 'true'
         run: |
           helm install bifrost ./charts/bifrost --wait
-          ct install --charts ./charts/bifrost --target-branch ${{ github.event.repository.default_branch }}
+          ct install --charts ./charts/bifrost --target-branch ${ GITHUB_REF##*/ }
   push:
     permissions:
       contents: read
