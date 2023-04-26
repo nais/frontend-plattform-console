@@ -97,10 +97,8 @@ jobs:
       - name: Build Charts
         run: |
           helm package ./charts/bifrost -d ./charts/bifrost
-          helm package ./charts/bifrost -d ./charts/bifrost
 
       - name: Push Chart
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         run: |
-          helm push ./charts/bifrost/*.tgz oci://${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}
           helm push ./charts/bifrost/*.tgz oci://${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}
