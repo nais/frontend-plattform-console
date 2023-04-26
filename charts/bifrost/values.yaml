@@ -5,7 +5,7 @@ backend:
     tag: main
   resources:
     requests:
-      Cpu: 100m
+      cpu: 100m
       memory: 256Mi
   logLevel: info
   logFormat: json
