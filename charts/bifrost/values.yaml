@@ -1,0 +1,49 @@
+backend:
+  image:
+    repository: europe-north1-docker.pkg.dev/nais-io/nais/images/bifrost
+    pullPolicy: Always
+    tag: main
+  resources:
+    requests:
+      Cpu: 100m
+      memory: 256Mi
+  logLevel: info
+  logFormat: json
+
+  unleash:
+    # Kubernetes namespace to create unleash instances in
+    instanceNamespace:  # mapped in fasit
+
+    # Shared Cloud SQL instance ID
+    sqlInstanceId:  # mapped in fasit
+    sqlInstanceAddress:  # mapped in fasit
+    sqlInstanceRegion:  # mapped in fasit
+
+    # Shared service account (used by Cloud SQL auth proxy)
+    googleServiceAccountEmail:  # mapped in fasit
+    kubernetesServiceAccountName:  # mapped in fasit
+
+    # Unleash user interface web ingress config
+    webIngressClass:  # mapped in fasit
+    webIngressHost:  # mapped in fasit
+
+    # Unleash api ingress config
+    apiIngressClass:  # mapped in fasit
+    apiIngressHost:  # mapped in fasit
+
+  google:
+    projectId:  # mapped in fasit
+    projectNumber:  # mapped in fasit
+    serviceAccountEmail:  # mapped in fasit
+    iapBackendServiceId:  # mapped in fasit
+
+nameOverride: ""
+fullnameOverride: ""
+
+service:
+  type: ClusterIP
+  port: 80
+
+ingress:
+  className: nais-ingress-iap
+  host:  # mapped in fasit

@@ -1,0 +1,8 @@
+apiVersion: v2
+name: bifrost
+description: Bifrost Frontend Plattform Portal
+maintainers:
+  - email: "nais@nav.no"
+    name: "nais"
+type: application
+version: 1.4.2
