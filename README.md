@@ -39,6 +39,25 @@ Bifröst is configured using environment variables. The following variables are 
 | `BIFROST_GOOGLE_PROJECT_NUMBER` | The Google Cloud project number |
 | `BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID` | The Google Cloud IAP backend service ID |
 
+#### IAP Backend Service ID
+
+To find the required IAP Eackend Service ID you can do one of two ways:
+
+Using the gcloud cli using the OAuth client ID for the IAP:
+
+```bash
+gcloud compute backend-services list \
+  --filter "iap.oauth2ClientId=<CLIENT_ID>" \
+  --format "value(id)"
+```
+
+Using the Google Cloud Console:
+
+1. Go to the [Identity-Aware Proxy](https://console.cloud.google.com/security/iap) page
+2. Find the correct load balancer in the list
+3. Click the `Get JWT audience code` from the list
+4. Copy the last number in the string which is the Backend Service ID
+
 ### Unleash Configuration**
 
 | Variable | Description |
