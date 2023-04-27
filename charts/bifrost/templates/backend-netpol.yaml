@@ -2,7 +2,7 @@
 apiVersion: networking.k8s.io/v1
 kind: NetworkPolicy
 metadata:
-  name: {{ .Release.Name }}
+  name: {{ .Release.Name }}-backend
 spec:
   egress:
   - to:
@@ -20,8 +20,8 @@ spec:
   {{- end }}
   podSelector:
     matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/name: {{ .Release.Name }}
+      {{- include "bifrost.selectorLabels" . | nindent 6 }}
+      component: backend
   policyTypes:
   - Egress
 {{- end }}
