@@ -1,3 +1,4 @@
+{{- if and .Values.networkPolicy .Values.networkPolicy.enabled }}
 {{- if .Capabilities.APIVersions.Has "networking.gke.io/v1alpha3" }}
 apiVersion: networking.gke.io/v1alpha3
 kind: FQDNNetworkPolicy
@@ -8,6 +9,8 @@ spec:
   - ports:
     - port: 80
       protocol: TCP
+    - port: 988
+      protocol: TCP
     to:
     - fqdns:
       - metadata.google.internal
@@ -16,7 +19,6 @@ spec:
       protocol: TCP
     to:
     - fqdns:
-      - unleash-api.dev-nais.cloud.nais.io
       - private.googleapis.com
   podSelector:
     matchLabels:
@@ -24,4 +26,5 @@ spec:
       app.kubernetes.io/name: {{ .Release.Name }}
   policyTypes:
   - Egress
+{{- end }}
 {{- end }}

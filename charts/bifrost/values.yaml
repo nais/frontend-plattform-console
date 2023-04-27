@@ -47,3 +47,9 @@ service:
 ingress:
   className: nais-ingress-iap
   host:  # mapped in fasit
+
+networkPolicy:
+  enabled: true
+  allowDNS: true
+  # apiServerCIDR is the CIDR of the Kubernetes API server.
+  # apiServerCIDR: 1.2.3.4/32
