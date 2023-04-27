@@ -20,10 +20,10 @@ spec:
     to:
     - fqdns:
       - private.googleapis.com
-  podSelector:
-    matchLabels:
-      app.kubernetes.io/instance: {{ .Release.Name }}
-      app.kubernetes.io/name: {{ .Release.Name }}
+  podselector:
+    matchlabels:
+      {{- include "bifrost.selectorlabels" . | nindent 6 }}
+      component: backend
   policyTypes:
   - Egress
 {{- end }}
