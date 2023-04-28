@@ -22,7 +22,7 @@ spec:
       - private.googleapis.com
   podselector:
     matchlabels:
-      {{- include "bifrost.selectorlabels" . | nindent 6 }}
+      {{- include "bifrost.selectorLabels" . | nindent 6 }}
       component: backend
   policyTypes:
   - Egress
