@@ -2,6 +2,7 @@ package config
 
 import (
 	"context"
+	"fmt"
 	"log"
 
 	"github.com/gin-gonic/gin"
@@ -43,6 +44,10 @@ type Config struct {
 	Unleash             UnleashConfig
 	DebugMode           bool
 	CloudConnectorProxy string `env:"BIFROST_CLOUD_CONNECTOR_PROXY_IMAGE,default=gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0"`
+}
+
+func (c *Config) GoogleIAPAudience() string {
+	return fmt.Sprintf("/projects/%s/global/backendServices/%s", c.Google.ProjectNumber, c.Google.IAPBackendServiceID)
 }
 
 func (c *Config) GetServerAddr() string {
