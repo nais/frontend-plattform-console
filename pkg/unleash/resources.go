@@ -27,7 +27,7 @@ func newFQDNNetworkPolicySpec(teamName string, kubeNamespace string) fqdnV1alpha
 
 	return fqdnV1alpha3.FQDNNetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      teamName,
+			Name:      fmt.Sprintf("%s-fqdn", teamName),
 			Namespace: kubeNamespace,
 		},
 		TypeMeta: metav1.TypeMeta{
@@ -39,6 +39,7 @@ func newFQDNNetworkPolicySpec(teamName string, kubeNamespace string) fqdnV1alpha
 				MatchLabels: map[string]string{
 					"app.kubernetes.io/instance":   teamName,
 					"app.kubernetes.io/part-of":    "unleasherator",
+					"app.kubernetes.io/name":       "Unleash",
 					"app.kubernetes.io/created-by": "controller-manager",
 				},
 			},
@@ -99,6 +100,9 @@ func newUnleashSpec(
 		Spec: unleashv1.UnleashSpec{
 			Size: 1,
 			Database: unleashv1.DatabaseConfig{
+				Host:                  "localhost",
+				Port:                  "5432",
+				SSL:                   "false",
 				SecretName:            teamName,
 				SecretUserKey:         "POSTGRES_USER",
 				SecretPassKey:         "POSTGRES_PASSWORD",
