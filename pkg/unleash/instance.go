@@ -10,9 +10,7 @@ import (
 	admin "google.golang.org/api/sqladmin/v1beta4"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
-	ctrl_config "sigs.k8s.io/controller-runtime/pkg/client/config"
 )
 
 type Unleash struct {
@@ -103,61 +101,21 @@ func CreateInstance(ctx context.Context,
 }
 
 func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
-	schema := runtime.NewScheme()
-	unleashv1.AddToScheme(schema)
-	opts := ctrl.Options{
-		Scheme: schema,
-	}
-	c, err := ctrl.New(ctrl_config.GetConfigOrDie(), opts)
-	if err != nil {
-		return err
-	}
-
-	return c.Delete(ctx, &unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}})
+	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}}
+	return kubeClient.Delete(ctx, &unleashDefinition)
 }
 
 func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName string) error {
 	unleashDefinition := newUnleashSpec(config, teamName)
-
-	schema := runtime.NewScheme()
-	unleashv1.AddToScheme(schema)
-	opts := ctrl.Options{
-		Scheme: schema,
-	}
-	c, err := ctrl.New(ctrl_config.GetConfigOrDie(), opts)
-	if err != nil {
-		return err
-	}
-
-	return c.Create(ctx, &unleashDefinition)
+	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
 func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
-	schema := runtime.NewScheme()
-	fqdnV1alpha3.AddToScheme(schema)
-	opts := ctrl.Options{
-		Scheme: schema,
-	}
-	c, err := ctrl.New(ctrl_config.GetConfigOrDie(), opts)
-	if err != nil {
-		return err
-	}
-
-	return c.Delete(ctx, &fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}})
+	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}}
+	return kubeClient.Delete(ctx, &fqdn)
 }
 
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
 	fqdn := newFQDNNetworkPolicySpec(teamName, kubeNamespace)
-
-	schema := runtime.NewScheme()
-	fqdnV1alpha3.AddToScheme(schema)
-	opts := ctrl.Options{
-		Scheme: schema,
-	}
-	c, err := ctrl.New(ctrl_config.GetConfigOrDie(), opts)
-	if err != nil {
-		return err
-	}
-
-	return c.Create(ctx, &fqdn)
+	return kubeClient.Create(ctx, &fqdn)
 }
