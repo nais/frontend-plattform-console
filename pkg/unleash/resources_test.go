@@ -80,7 +80,9 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 func TestNewUnleashSpec(t *testing.T) {
 	c := config.Config{
 		Google: config.GoogleConfig{
-			ProjectID: "my-project",
+			ProjectID:           "my-project",
+			ProjectNumber:       "1234",
+			IAPBackendServiceID: "5678",
 		},
 		Unleash: config.UnleashConfig{
 			InstanceNamespace:       "unleash-ns",
@@ -96,12 +98,11 @@ func TestNewUnleashSpec(t *testing.T) {
 		CloudConnectorProxy: "repo/connector:latest",
 	}
 	teamName := "my-team"
-	googleIapAudience := "google-iap-audience"
 
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
 
-	a := newUnleashSpec(&c, teamName, googleIapAudience)
+	a := newUnleashSpec(&c, teamName)
 	b := unleashv1.Unleash{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Unleash",
@@ -149,7 +150,7 @@ func TestNewUnleashSpec(t *testing.T) {
 			},
 			ExtraEnvVars: []corev1.EnvVar{{
 				Name:  "GOOGLE_IAP_AUDIENCE",
-				Value: "google-iap-audience",
+				Value: "/projects/1234/global/backendServices/5678",
 			}},
 			ExtraContainers: []corev1.Container{{
 				Name:  "sql-proxy",

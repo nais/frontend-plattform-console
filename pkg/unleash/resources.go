@@ -79,12 +79,13 @@ func newFQDNNetworkPolicySpec(teamName string, kubeNamespace string) fqdnV1alpha
 }
 
 func newUnleashSpec(
-	bifrostConfig *config.Config,
+	c *config.Config,
 	teamName string,
-	googleIapAudience string,
 ) unleashv1.Unleash {
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
+
+	googleIapAudience := c.GoogleIAPAudience()
 
 	return unleashv1.Unleash{
 		TypeMeta: metav1.TypeMeta{
@@ -93,7 +94,7 @@ func newUnleashSpec(
 		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      teamName,
-			Namespace: bifrostConfig.Unleash.InstanceNamespace,
+			Namespace: c.Unleash.InstanceNamespace,
 		},
 		Spec: unleashv1.UnleashSpec{
 			Size: 1,
@@ -106,15 +107,15 @@ func newUnleashSpec(
 			},
 			WebIngress: unleashv1.IngressConfig{
 				Enabled: true,
-				Host:    fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceWebIngressHost),
+				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceWebIngressHost),
 				Path:    "/",
-				Class:   bifrostConfig.Unleash.InstanceWebIngressClass,
+				Class:   c.Unleash.InstanceWebIngressClass,
 			},
 			ApiIngress: unleashv1.IngressConfig{
 				Enabled: true,
-				Host:    fmt.Sprintf("%s-%s", teamName, bifrostConfig.Unleash.InstanceAPIIngressHost),
+				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceAPIIngressHost),
 				Path:    "/api",
-				Class:   bifrostConfig.Unleash.InstanceAPIIngressClass,
+				Class:   c.Unleash.InstanceAPIIngressClass,
 			},
 			NetworkPolicy: unleashv1.NetworkPolicyConfig{
 				Enabled:  true,
@@ -127,7 +128,7 @@ func newUnleashSpec(
 						}},
 						To: []networkingv1.NetworkPolicyPeer{{
 							IPBlock: &networkingv1.IPBlock{
-								CIDR: fmt.Sprintf("%s/32", bifrostConfig.Unleash.SQLInstanceAddress),
+								CIDR: fmt.Sprintf("%s/32", c.Unleash.SQLInstanceAddress),
 							},
 						}},
 					},
@@ -139,13 +140,13 @@ func newUnleashSpec(
 			}},
 			ExtraContainers: []corev1.Container{{
 				Name:  "sql-proxy",
-				Image: bifrostConfig.CloudConnectorProxy,
+				Image: c.CloudConnectorProxy,
 				Args: []string{
 					"--structured-logs",
 					"--port=5432",
-					fmt.Sprintf("%s:%s:%s", bifrostConfig.Google.ProjectID,
-						bifrostConfig.Unleash.SQLInstanceRegion,
-						bifrostConfig.Unleash.SQLInstanceID),
+					fmt.Sprintf("%s:%s:%s", c.Google.ProjectID,
+						c.Unleash.SQLInstanceRegion,
+						c.Unleash.SQLInstanceID),
 				},
 				SecurityContext: &corev1.SecurityContext{
 					Capabilities: &corev1.Capabilities{
@@ -157,7 +158,7 @@ func newUnleashSpec(
 					AllowPrivilegeEscalation: boolRef(false),
 				},
 			}},
-			ExistingServiceAccountName: bifrostConfig.Unleash.InstanceServiceaccount,
+			ExistingServiceAccountName: c.Unleash.InstanceServiceaccount,
 			Resources:                  corev1.ResourceRequirements{},
 		},
 	}
