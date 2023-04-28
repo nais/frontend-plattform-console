@@ -20,8 +20,8 @@ spec:
     to:
     - fqdns:
       - private.googleapis.com
-  podselector:
-    matchlabels:
+  podSelector:
+    matchLabels:
       {{- include "bifrost.selectorLabels" . | nindent 6 }}
       component: backend
   policyTypes:
