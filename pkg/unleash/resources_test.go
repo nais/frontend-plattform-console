@@ -26,14 +26,15 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 			APIVersion: "networking.gke.io/v1alpha3",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      teamName,
+			Name:      "my-team-fqdn",
 			Namespace: kubeNamespace,
 		},
 		Spec: fqdnV1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/instance":   teamName,
+					"app.kubernetes.io/instance":   "my-team",
 					"app.kubernetes.io/part-of":    "unleasherator",
+					"app.kubernetes.io/name":       "Unleash",
 					"app.kubernetes.io/created-by": "controller-manager",
 				},
 			},
@@ -115,8 +116,8 @@ func TestNewUnleashSpec(t *testing.T) {
 		Spec: unleashv1.UnleashSpec{
 			Size: 1,
 			Database: unleashv1.DatabaseConfig{
-				Port:                  "5432",
 				Host:                  "localhost",
+				Port:                  "5432",
 				SSL:                   "false",
 				SecretName:            "my-team",
 				SecretUserKey:         "POSTGRES_USER",

@@ -31,12 +31,12 @@ rules:
   - apiGroups:
       - unleash.nais.io
     resources:
-      - Unleash
+      - unleashes
     verbs:
       - "*"
   - apiGroups:
-      - fqdnnetworkpolicies.networking.gke.io
+      - networking.gke.io
     resources:
-      - FQDNNetworkPolicy
+      - fqdnnetworkpolicies
     verbs:
       - "*"
