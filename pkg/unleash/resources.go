@@ -106,7 +106,6 @@ func newUnleashSpec(
 				SecretName:            teamName,
 				SecretUserKey:         "POSTGRES_USER",
 				SecretPassKey:         "POSTGRES_PASSWORD",
-				SecretHostKey:         "POSTGRES_HOST",
 				SecretDatabaseNameKey: "POSTGRES_DB",
 			},
 			WebIngress: unleashv1.IngressConfig{

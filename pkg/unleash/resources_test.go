@@ -122,7 +122,6 @@ func TestNewUnleashSpec(t *testing.T) {
 				SecretName:            "my-team",
 				SecretUserKey:         "POSTGRES_USER",
 				SecretPassKey:         "POSTGRES_PASSWORD",
-				SecretHostKey:         "POSTGRES_HOST",
 				SecretDatabaseNameKey: "POSTGRES_DB",
 			},
 			WebIngress: unleashv1.IngressConfig{
