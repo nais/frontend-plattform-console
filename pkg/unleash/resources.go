@@ -99,10 +99,12 @@ func newUnleashSpec(
 		Spec: unleashv1.UnleashSpec{
 			Size: 1,
 			Database: unleashv1.DatabaseConfig{
+				Port:                  "5432",
+				Host:                  "localhost",
+				SSL:                   "false",
 				SecretName:            teamName,
 				SecretUserKey:         "POSTGRES_USER",
 				SecretPassKey:         "POSTGRES_PASSWORD",
-				SecretHostKey:         "POSTGRES_HOST",
 				SecretDatabaseNameKey: "POSTGRES_DB",
 			},
 			WebIngress: unleashv1.IngressConfig{
