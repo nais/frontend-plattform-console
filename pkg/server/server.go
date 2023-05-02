@@ -10,6 +10,7 @@ import (
 	"github.com/nais/bifrost/pkg/config"
 	"github.com/nais/bifrost/pkg/handler"
 	"github.com/nais/bifrost/pkg/server/utils"
+	"github.com/nais/bifrost/pkg/unleash"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
 	admin "google.golang.org/api/sqladmin/v1beta4"
@@ -106,7 +107,9 @@ func Run(config *config.Config) {
 		log.Fatal(err)
 	}
 
-	h := handler.NewHandler(kubeClient, googleClient, config, unleashInstance, log)
+	unleashService := unleash.NewUnleashService(googleClient, kubeClient, unleashInstance, config, log)
+
+	h := handler.NewHandler(config, log, unleashService)
 
 	router.Use(h.ErrorHandler)
 	router.Static("/assets", "./assets")
