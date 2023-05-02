@@ -7,7 +7,6 @@ import (
 	"github.com/nais/bifrost/pkg/config"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	admin "google.golang.org/api/sqladmin/v1beta4"
-	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -20,7 +19,6 @@ type UnleashInstance struct {
 	databaseInstance    *admin.DatabaseInstance
 	database            *admin.Database
 	databaseUser        *admin.User
-	secret              *corev1.Secret
 }
 
 func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
@@ -32,8 +30,19 @@ func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
 	}
 }
 
+func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service) error {
+	database, err := getDatabase(ctx, client, u.databaseInstance, u.TeamName)
+	if err != nil {
+		return err
+	}
+
+	u.database = database
+
+	return nil
+}
+
 func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
-	user, err := getDatabaseUser(ctx, client, u.databaseInstance, u.database.Name)
+	user, err := getDatabaseUser(ctx, client, u.databaseInstance, u.TeamName)
 	if err != nil {
 		return err
 	}

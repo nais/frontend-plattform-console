@@ -82,15 +82,6 @@ func getDatabase(ctx context.Context, client *admin.Service, instance *admin.Dat
 	return database, nil
 }
 
-func getDatabases(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance) ([]*admin.Database, error) {
-	databases, err := client.Databases.List(instance.Project, instance.Name).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	return databases.Items, nil
-}
-
 func deleteDatabase(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) error {
 	_, err := client.Databases.Delete(instance.Project, instance.Name, databaseName).Do()
 	if err != nil {
