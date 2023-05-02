@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"time"
 
@@ -116,4 +117,40 @@ func TestUnleashIndex(t *testing.T) {
 	assert.Equal(t, 200, w.Code)
 	assert.Contains(t, w.Body.String(), "<a class=\"header\" href=\"team1\">team1</a>")
 	assert.Contains(t, w.Body.String(), "<a class=\"header\" href=\"team2\">team2</a>")
+}
+
+func TestUnleashNew(t *testing.T) {
+	config := &config.Config{
+		Server: config.ServerConfig{
+			TemplatesDir: "../../templates",
+		},
+	}
+	logger := logrus.New()
+	service := &MockUnleashService{
+		Instances: []*unleash.UnleashInstance{},
+	}
+
+	router := setupRouter(config, logger, service)
+
+	w := httptest.NewRecorder()
+	req, _ := http.NewRequest("GET", "/unleash/new", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">New Unleash Instance</h1>")
+	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/unleash/new", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 400, w.Code)
+	assert.Contains(t, w.Body.String(), "<p>Missing team name</p>")
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("team-name=my-team"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "/unleash", w.Header().Get("Location"))
+	assert.Equal(t, 1, len(service.Instances))
+	assert.Equal(t, "my-team", service.Instances[0].TeamName)
 }
