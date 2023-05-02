@@ -18,6 +18,7 @@ type ServerConfig struct {
 	ReadTimeout     int    `env:"BIFROST_READ_TIMEOUT,default=15"`
 	IdleTimeout     int    `env:"BIFROST_IDLE_TIMEOUT,default=60"`
 	GracefulTimeout int    `env:"BIFROST_GRACEFUL_TIMEOUT,default=15"`
+	TemplatesDir    string `env:"BIFROST_TEMPLATE_DIR,default=./templates"`
 }
 
 type GoogleConfig struct {

@@ -12,6 +12,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
+type IUnleashService interface {
+	List(ctx context.Context) ([]*UnleashInstance, error)
+	Get(ctx context.Context, teamName string) (*UnleashInstance, error)
+	Create(ctx context.Context, teamName string) error
+	Delete(ctx context.Context, teamName string) error
+}
+
 type UnleashService struct {
 	googleClient *admin.Service
 	sqlInstance  *admin.DatabaseInstance

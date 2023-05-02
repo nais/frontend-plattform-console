@@ -14,12 +14,12 @@
   {{ range .instances }}
   <div class="item">
     <div class="right floated content">
-      <a class="ui button" href="{{ .Database.Name }}/delete">Delete</a>
+      <a class="ui button" href="{{ .TeamName }}/delete">Delete</a>
     </div>
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">
-      <a class="header" href="{{ .Database.Name }}">{{ .Database.Name }}</a>
-      <div class="description">Updated 22 mins ago</div>
+      <a class="header" href="{{ .TeamName }}">{{ .TeamName }}</a>
+      <div class="description">{{ .CreatedAt }}</div>
     </div>
   </div>
   {{ end }}

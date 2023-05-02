@@ -9,10 +9,10 @@ import (
 type Handler struct {
 	config         *config.Config
 	logger         *logrus.Logger
-	unleashService *unleash.UnleashService
+	unleashService unleash.IUnleashService
 }
 
-func NewHandler(config *config.Config, logger *logrus.Logger, unleashService *unleash.UnleashService) *Handler {
+func NewHandler(config *config.Config, logger *logrus.Logger, unleashService unleash.IUnleashService) *Handler {
 	return &Handler{
 		config:         config,
 		logger:         logger,
