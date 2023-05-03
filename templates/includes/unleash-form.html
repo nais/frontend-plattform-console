@@ -20,7 +20,7 @@
 <h3 class="ui header">Instance Config</h3>
 
 <form class="ui form{{ if .error }} error{{ end }}" method="POST">
-  <div class="field">
+  <div class="field{{ if .error }} error{{ end }}">
     <label>Team Name</label>
     <input type="text" name="team-name" placeholder="Team Name">
     {{ if eq .action "delete" }}

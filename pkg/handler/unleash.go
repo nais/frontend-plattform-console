@@ -31,8 +31,9 @@ func (h *Handler) UnleashNewPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	if teamName == "" {
 		c.HTML(400, "unleash-form.html", gin.H{
-			"title": "New Unleash Instance",
-			"error": "Missing team name",
+			"title":  "New Unleash Instance",
+			"action": "create",
+			"error":  "Team name can not be empty",
 		})
 		return
 	}
@@ -138,9 +139,10 @@ func (h *Handler) UnleashInstanceDeletePost(c *gin.Context) {
 
 	if teamName != instance.TeamName {
 		c.HTML(400, "unleash-form.html", gin.H{
-			"title":  "Delete Unleash: " + instance.TeamName,
-			"action": "delete",
-			"error":  "Missing confirmation",
+			"title":    "Delete Unleash: " + instance.TeamName,
+			"action":   "delete",
+			"instance": instance,
+			"error":    "Team name does not match",
 		})
 		return
 	}
