@@ -30,6 +30,7 @@ type UnleashService struct {
 func NewUnleashService(googleClient *admin.Service, kubeClient ctrl.Client, sqlInstance *admin.DatabaseInstance, config *config.Config, logger *logrus.Logger) *UnleashService {
 	return &UnleashService{
 		googleClient: googleClient,
+		sqlInstance:  sqlInstance,
 		kubeClient:   kubeClient,
 		config:       config,
 		logger:       logger,

@@ -79,7 +79,7 @@ func newFQDNNetworkPolicySpec(teamName string, kubeNamespace string) fqdnV1alpha
 	}
 }
 
-func newUnleashSpec(
+func NewUnleashSpec(
 	c *config.Config,
 	teamName string,
 ) unleashv1.Unleash {

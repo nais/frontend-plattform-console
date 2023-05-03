@@ -1,17 +1,84 @@
 {{define "content"}}
+
+<a class="ui {{ .instance.StatusLabel }} label">{{ .instance.Status }}</a>
+
+<h5 class="ui top attached header">
+  unleash.yaml
+</h5>
+<div class="ui attached segment" style="padding: 0;">
+  <pre style="margin: 0; overflow: scroll; max-height: 250px;"><code class="language-yaml">{{ .instanceYaml }}</code></pre>
+</div>
+
+<h3 class="ui header">
+  <i class="settings icon"></i>
+  <div class="content">
+    Server Settings
+    <div class="sub header">Kubernetes Resource Settings</div>
+  </div>
+</h3>
+
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">{{ .instance.DatabaseInstance.Name }}</div>
+      {{ if .instance.WebUrl }}
+      <a class="ui label" href="{{ .instance.WebUrl }}">{{ .instance.WebUrl }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Not Found
+      </div>
+      {{ end }}
     </div>
-    <i class="large database middle aligned icon"></i>
+    <!-- <i class="large internet explorer middle aligned icon"></i>-->
+    <div class="content">Web Ingress</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .instance.ApiUrl }}
+      <a class="ui label" href="{{ .instance.ApiUrl }}">{{ .instance.ApiUrl }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Not Found
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">API ingress</div>
+  </div>
+</div>
+
+<h3 class="ui header">
+  <i class="settings icon"></i>
+  <div class="content">
+    Database Settings
+    <div class="sub header">Database Connection Settings</div>
+  </div>
+</h3>
+
+<div class="ui middle aligned divided list">
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">
+      {{ if .instance.DatabaseInstance }}
+        {{ .instance.DatabaseInstance.Name }}
+      {{ else }}
+        <i class="exclamation triangle icon"></i> Not Found
+      {{ end }}
+      </div>
+    </div>
+    <!--<i class="large database middle aligned icon"></i>-->
     <div class="content">Database Instance</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">{{ .instance.Database.Name }}</div>
+      <div class="ui label">
+      {{ if .instance.Database }}
+        {{ .instance.Database.Name }}
+      {{ else }}
+        <i class="exclamation triangle icon"></i> Not Found
+      {{ end }}
+      </div>
     </div>
-    <i class="large database middle aligned icon"></i>
+    <!--<i class="large database middle aligned icon"></i>-->
     <div class="content">Database Name</div>
   </div>
   <div class="item">
@@ -24,8 +91,21 @@
       {{ end }}
       </div>
     </div>
-    <i class="large user middle aligned icon"></i>
+    <!--<i class="large user middle aligned icon"></i>-->
     <div class="content">Database User</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">
+      {{ if .instance.DatabaseSecret }}
+        {{ .instance.DatabaseSecret.Name }}
+      {{ else }}
+        <i class="exclamation triangle icon"></i> Not Found
+      {{ end }}
+      </div>
+    </div>
+    <!--<i class="large user middle aligned icon"></i>-->
+    <div class="content">Database Secret</div>
   </div>
 </div>
 {{end}}

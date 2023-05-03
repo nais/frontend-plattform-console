@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/unleash"
+	"github.com/nais/bifrost/pkg/utils"
 )
 
 func (h *Handler) HealthHandler(c *gin.Context) {
@@ -65,9 +66,17 @@ func (h *Handler) UnleashIndex(c *gin.Context) {
 }
 
 func (h *Handler) UnleashNew(c *gin.Context) {
+	obj := unleash.NewUnleashSpec(h.config, "my-unleash")
+	yamlString, err := utils.StructToYaml(obj)
+	if err != nil {
+		h.logger.WithError(err).Error("Error converting Unleash struct to yaml")
+		yamlString = "Parse error - see logs"
+	}
+
 	c.HTML(200, "unleash-form.html", gin.H{
 		"title":  "New Unleash Instance",
 		"action": "create",
+		"yaml":   yamlString,
 	})
 }
 
@@ -85,7 +94,7 @@ func (h *Handler) UnleashInstanceMiddleware(c *gin.Context) {
 		return
 	}
 
-	c.Set("unleashInstance", &instance)
+	c.Set("unleashInstance", instance)
 	c.Next()
 }
 
@@ -93,12 +102,21 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 	// ctx := c.Request.Context()
 
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
+	instanceYaml, err := utils.StructToYaml(instance.ServerInstance)
+	if err != nil {
+		h.logger.WithError(err).Error("Error converting Unleash struct to yaml")
+		instanceYaml = "Parse error - see logs"
+	}
 
 	// @TODO get more info about the instance
+	// h.unleashService.
+	// instance.GetDatabase()
+	// instance.GetDatabaseUser()
 
 	c.HTML(200, "unleash-show.html", gin.H{
-		"title":    "Unleash: " + instance.TeamName,
-		"instance": instance,
+		"title":        "Unleash: " + instance.TeamName,
+		"instance":     instance,
+		"instanceYaml": template.HTML(instanceYaml),
 	})
 }
 

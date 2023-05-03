@@ -2,11 +2,13 @@ package unleash
 
 import (
 	"context"
+	"fmt"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/nais/bifrost/pkg/config"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	admin "google.golang.org/api/sqladmin/v1beta4"
+	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
@@ -15,10 +17,11 @@ type UnleashInstance struct {
 	TeamName            string
 	KubernetesNamespace string
 	CreatedAt           metav1.Time
-	serverInstance      *unleashv1.Unleash
-	databaseInstance    *admin.DatabaseInstance
-	database            *admin.Database
-	databaseUser        *admin.User
+	ServerInstance      *unleashv1.Unleash
+	DatabaseInstance    *admin.DatabaseInstance
+	Database            *admin.Database
+	DatabaseUser        *admin.User
+	DatabaseSecret      *corev1.Secret
 }
 
 func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
@@ -26,28 +29,68 @@ func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
 		TeamName:            serverInstance.ObjectMeta.Name,
 		KubernetesNamespace: serverInstance.ObjectMeta.Namespace,
 		CreatedAt:           serverInstance.ObjectMeta.CreationTimestamp,
-		serverInstance:      serverInstance,
+		ServerInstance:      serverInstance,
+	}
+}
+
+func (u *UnleashInstance) ApiUrl() string {
+	if u.ServerInstance != nil {
+		return fmt.Sprintf("https://%s/api/", u.ServerInstance.Spec.ApiIngress.Host)
+	} else {
+		return ""
+	}
+}
+
+func (u *UnleashInstance) WebUrl() string {
+	if u.ServerInstance != nil {
+		return fmt.Sprintf("https://%s/", u.ServerInstance.Spec.WebIngress.Host)
+	} else {
+		return ""
+	}
+}
+
+func (u *UnleashInstance) Status() string {
+	if u.ServerInstance != nil {
+		if u.ServerInstance.Status.IsReady() {
+			return "Ready"
+		} else {
+			return "Not ready"
+		}
+	} else {
+		return "Status unknown"
+	}
+}
+
+func (u *UnleashInstance) StatusLabel() string {
+	if u.ServerInstance != nil {
+		if u.ServerInstance.Status.IsReady() {
+			return "green"
+		} else {
+			return "red"
+		}
+	} else {
+		return "orange"
 	}
 }
 
 func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service) error {
-	database, err := getDatabase(ctx, client, u.databaseInstance, u.TeamName)
+	database, err := getDatabase(ctx, client, u.DatabaseInstance, u.TeamName)
 	if err != nil {
 		return err
 	}
 
-	u.database = database
+	u.Database = database
 
 	return nil
 }
 
 func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
-	user, err := getDatabaseUser(ctx, client, u.databaseInstance, u.TeamName)
+	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.TeamName)
 	if err != nil {
 		return err
 	}
 
-	u.databaseUser = user
+	u.DatabaseUser = user
 
 	return nil
 }
@@ -58,7 +101,7 @@ func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace str
 }
 
 func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName string) error {
-	unleashDefinition := newUnleashSpec(config, teamName)
+	unleashDefinition := NewUnleashSpec(config, teamName)
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
