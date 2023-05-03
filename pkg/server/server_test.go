@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/config"
 	"github.com/nais/bifrost/pkg/unleash"
+	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -37,8 +38,9 @@ func (s *MockUnleashService) Get(ctx context.Context, teamName string) (*unleash
 
 func (s *MockUnleashService) Create(ctx context.Context, teamName string) error {
 	s.Instances = append(s.Instances, &unleash.UnleashInstance{
-		TeamName:  teamName,
-		CreatedAt: metav1.Now(),
+		TeamName:       teamName,
+		CreatedAt:      metav1.Now(),
+		ServerInstance: &unleashv1.Unleash{},
 	})
 
 	return nil
@@ -95,12 +97,14 @@ func newUnleashRoute() (c *config.Config, service *MockUnleashService, router *g
 	service = &MockUnleashService{
 		Instances: []*unleash.UnleashInstance{
 			{
-				TeamName:  "team1",
-				CreatedAt: metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+				TeamName:       "team1",
+				CreatedAt:      metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+				ServerInstance: &unleashv1.Unleash{},
 			},
 			{
-				TeamName:  "team2",
-				CreatedAt: metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+				TeamName:       "team2",
+				CreatedAt:      metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
+				ServerInstance: &unleashv1.Unleash{},
 			},
 		},
 	}
@@ -140,7 +144,7 @@ func TestUnleashNew(t *testing.T) {
 	req, _ = http.NewRequest("POST", "/unleash/new", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 400, w.Code)
-	assert.Contains(t, w.Body.String(), "<p>Missing team name</p>")
+	assert.Contains(t, w.Body.String(), "<p>Team name can not be empty</p>")
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("team-name=my-team"))
@@ -165,8 +169,7 @@ func TestUnleashGet(t *testing.T) {
 	req, _ = http.NewRequest("GET", "/unleash/team1/", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
-	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">New Unleash Instance</h1>")
-	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
+	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">Unleash: team1</h1>")
 }
 
 func TestUnleashDelete(t *testing.T) {
@@ -202,7 +205,7 @@ func TestUnleashDelete(t *testing.T) {
 	req, _ = http.NewRequest("POST", "/unleash/new", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 400, w.Code)
-	assert.Contains(t, w.Body.String(), "<p>Missing team name</p>")
+	assert.Contains(t, w.Body.String(), "<p>Team name can not be empty</p>")
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("team-name=my-team"))
@@ -210,6 +213,6 @@ func TestUnleashDelete(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, "/unleash", w.Header().Get("Location"))
-	assert.Equal(t, 1, len(service.Instances))
-	assert.Equal(t, "my-team", service.Instances[0].TeamName)
+	assert.Equal(t, 3, len(service.Instances))
+	assert.Equal(t, "my-team", service.Instances[2].TeamName)
 }
