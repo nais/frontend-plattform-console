@@ -122,9 +122,11 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 
 func (h *Handler) UnleashInstanceDelete(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
+
 	c.HTML(200, "unleash-form.html", gin.H{
-		"title":  "Delete Unleash: " + instance.TeamName,
-		"action": "delete",
+		"title":    "Delete Unleash: " + instance.TeamName,
+		"action":   "delete",
+		"instance": instance,
 	})
 }
 

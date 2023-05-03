@@ -2,9 +2,25 @@
 
 <a class="ui {{ .instance.StatusLabel }} label">{{ .instance.Status }}</a>
 
-<h5 class="ui top attached header">
-  unleash.yaml
-</h5>
+<div class="ui grid">
+  <div class="eight wide column">
+    <div class="ui breadcrumb">
+      <a class="section" href="/">Home</a>
+      <div class="divider"> / </div>
+      <a class="section" href="/unleash/">Unleash</a>
+      <div class="divider"> / </div>
+      <div class="active section">{{ .instance.TeamName }}</div>
+    </div>
+  </div>
+  <div class="right aligned eight wide column">
+<div class="mini ui buttons">
+  <a class="ui button disabled"><i class="pencil icon"></i></a>
+  <a class="ui button" href="./delete"><i class="trash icon"></i></a>
+</div>
+  </div>
+</div>
+
+<h5 class="ui top attached header">unleash.yaml</h5>
 <div class="ui attached segment" style="padding: 0;">
   <pre style="margin: 0; overflow: scroll; max-height: 250px;"><code class="language-yaml">{{ .instanceYaml }}</code></pre>
 </div>

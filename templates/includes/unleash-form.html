@@ -1,4 +1,24 @@
 {{define "content"}}
+<div class="ui breadcrumb">
+  <a class="section" href="/">Home</a>
+  <div class="divider"> / </div>
+  <a class="section" href="/unleash/">Unleash</a>
+  <div class="divider"> / </div>
+  {{ if eq .action "create" }}
+  <div class="active section">New Unleash Instance</div>
+  {{ else }}
+  <a class="section" href="/unleash/{{ .instance.TeamName }}">{{ .instance.TeamName }}</a>
+  <div class="divider"> / </div>
+  {{ if eq .action "update" }}
+  <div class="active section">Edit</div>
+  {{ else if eq .action "delete" }}
+  <div class="active section">Delete</div>
+  {{ end }}
+  {{ end }}
+</div>
+
+<h3 class="ui header">Instance Config</h3>
+
 <form class="ui form{{ if .error }} error{{ end }}" method="POST">
   <div class="field">
     <label>Team Name</label>
@@ -22,11 +42,14 @@
   {{ end }}
 </form>
 
+{{ if .yaml }}
+<h3 class="ui header">Instance Preview</h3>
+
 <h5 class="ui top attached header">
   unleash.yaml
 </h5>
-<div class="ui attached segment">
-  <pre><code>{{ .yaml }}</code></pre>
+<div class="ui attached segment" style="padding: 0;">
+  <pre style="margin: 0; overflow: scroll;"><code class="language-yaml">{{ .yaml }}</code></pre>
 </div>
-
-{{end}}
+{{ end }}
+{{ end }}

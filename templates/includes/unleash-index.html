@@ -1,20 +1,28 @@
 {{define "content"}}
+
+<a href="new">
+  <i class="pencil alternate icon"></i> New Instance
+</a>
+
+<div class="ui breadcrumb">
+  <a class="section" href="/">Home</a>
+  <div class="divider"> / </div>
+  <div class="active section">Unleash</div>
+</div>
+
 {{ if eq .status "positive" }}
 <div class="ui positive message">
   <i class="close icon"></i>
   Unleash instance was created successfully!
 </div>
 {{ end }}
-<a href="new">
-  <i class="pencil alternate icon"></i> New Instance
-</a>
-<p>Welcome to Unleash as a Service</p>
+
 {{ if .instances }}
 <div class="ui relaxed divided list">
   {{ range .instances }}
   <div class="item">
     <div class="right floated content">
-      <a class="ui button" href="{{ .TeamName }}/delete">Delete</a>
+      <a class="ui button" href="{{ .TeamName }}/"><i class="eye icon"></i> View</a>
     </div>
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">
