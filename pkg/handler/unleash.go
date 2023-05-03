@@ -6,6 +6,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/unleash"
+	"github.com/nais/bifrost/pkg/utils"
 )
 
 func (h *Handler) HealthHandler(c *gin.Context) {
@@ -30,14 +31,14 @@ func (h *Handler) UnleashNewPost(c *gin.Context) {
 	ctx := c.Request.Context()
 	if teamName == "" {
 		c.HTML(400, "unleash-form.html", gin.H{
-			"title": "New Unleash Instance",
-			"error": "Missing team name",
+			"title":  "New Unleash Instance",
+			"action": "create",
+			"error":  "Team name can not be empty",
 		})
 		return
 	}
 
-	err := unleash.CreateInstance(ctx, h.googleClient, h.sqlInstance, teamName, h.config, h.kubeClient)
-	if err != nil {
+	if err := h.unleashService.Create(ctx, teamName); err != nil {
 		c.Error(err).
 			SetType(gin.ErrorTypePublic).
 			SetMeta("Error creating unleash instance")
@@ -49,7 +50,7 @@ func (h *Handler) UnleashNewPost(c *gin.Context) {
 
 func (h *Handler) UnleashIndex(c *gin.Context) {
 	ctx := c.Request.Context()
-	instances, err := unleash.GetInstances(ctx, h.googleClient, h.sqlInstance, h.config.Unleash.InstanceNamespace)
+	instances, err := h.unleashService.List(ctx)
 	if err != nil {
 		c.Error(err).
 			SetType(gin.ErrorTypePublic).
@@ -66,17 +67,27 @@ func (h *Handler) UnleashIndex(c *gin.Context) {
 }
 
 func (h *Handler) UnleashNew(c *gin.Context) {
+	obj := unleash.NewUnleashSpec(h.config, "my-unleash")
+	yamlString, err := utils.StructToYaml(obj)
+	if err != nil {
+		h.logger.WithError(err).Error("Error converting Unleash struct to yaml")
+		yamlString = "Parse error - see logs"
+	}
+
 	c.HTML(200, "unleash-form.html", gin.H{
 		"title":  "New Unleash Instance",
 		"action": "create",
+		"yaml":   yamlString,
 	})
 }
 
 func (h *Handler) UnleashInstanceMiddleware(c *gin.Context) {
-	databaseName := c.Param("id")
+	teamName := c.Param("id")
 	ctx := c.Request.Context()
 
-	instance, err := unleash.GetInstance(ctx, h.googleClient, h.sqlInstance, databaseName, h.config.Unleash.InstanceNamespace)
+	// @TODO check if user is allowed to access this instance
+
+	instance, err := h.unleashService.Get(ctx, teamName)
 	if err != nil {
 		h.logger.Info(err)
 		c.Redirect(404, "/unleash?status=not-found")
@@ -84,49 +95,59 @@ func (h *Handler) UnleashInstanceMiddleware(c *gin.Context) {
 		return
 	}
 
-	c.Set("unleashInstance", &instance)
+	c.Set("unleashInstance", instance)
 	c.Next()
 }
 
 func (h *Handler) UnleashInstanceShow(c *gin.Context) {
-	ctx := c.Request.Context()
+	// ctx := c.Request.Context()
 
-	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
-	err := instance.GetDatabaseUser(ctx, h.googleClient)
+	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
+	instanceYaml, err := utils.StructToYaml(instance.ServerInstance)
 	if err != nil {
-		h.logger.WithError(err).Errorf("Error getting database user for instance %s", instance.Database.Name)
+		h.logger.WithError(err).Error("Error converting Unleash struct to yaml")
+		instanceYaml = "Parse error - see logs"
 	}
 
+	// @TODO get more info about the instance
+	// h.unleashService.
+	// instance.GetDatabase()
+	// instance.GetDatabaseUser()
+
 	c.HTML(200, "unleash-show.html", gin.H{
-		"title":    "Unleash: " + instance.TeamName,
-		"instance": instance,
+		"title":        "Unleash: " + instance.TeamName,
+		"instance":     instance,
+		"instanceYaml": template.HTML(instanceYaml),
 	})
 }
 
 func (h *Handler) UnleashInstanceDelete(c *gin.Context) {
-	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
+	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
+
 	c.HTML(200, "unleash-form.html", gin.H{
-		"title":  "Delete Unleash: " + instance.TeamName,
-		"action": "delete",
+		"title":    "Delete Unleash: " + instance.TeamName,
+		"action":   "delete",
+		"instance": instance,
 	})
 }
 
 func (h *Handler) UnleashInstanceDeletePost(c *gin.Context) {
-	instance := c.MustGet("unleashInstance").(*unleash.Unleash)
+	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 
 	ctx := c.Request.Context()
 	teamName := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("team-name"), "")
 
 	if teamName != instance.TeamName {
 		c.HTML(400, "unleash-form.html", gin.H{
-			"title":  "Delete Unleash: " + instance.TeamName,
-			"action": "delete",
-			"error":  "Missing confirmation",
+			"title":    "Delete Unleash: " + instance.TeamName,
+			"action":   "delete",
+			"instance": instance,
+			"error":    "Team name does not match",
 		})
 		return
 	}
 
-	if err := instance.Delete(ctx, h.googleClient, h.kubeClient); err != nil {
+	if err := h.unleashService.Delete(ctx, instance.TeamName); err != nil {
 		c.Error(err).
 			SetType(gin.ErrorTypePublic).
 			SetMeta("Error deleting unleash instance")

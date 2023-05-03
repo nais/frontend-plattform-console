@@ -2,7 +2,7 @@ package unleash
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/nais/bifrost/pkg/config"
@@ -13,17 +13,79 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-type Unleash struct {
+type UnleashInstance struct {
 	TeamName            string
 	KubernetesNamespace string
+	CreatedAt           metav1.Time
+	ServerInstance      *unleashv1.Unleash
 	DatabaseInstance    *admin.DatabaseInstance
 	Database            *admin.Database
 	DatabaseUser        *admin.User
-	Secret              *corev1.Secret
+	DatabaseSecret      *corev1.Secret
 }
 
-func (u *Unleash) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
-	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.Database.Name)
+func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
+	return &UnleashInstance{
+		TeamName:            serverInstance.ObjectMeta.Name,
+		KubernetesNamespace: serverInstance.ObjectMeta.Namespace,
+		CreatedAt:           serverInstance.ObjectMeta.CreationTimestamp,
+		ServerInstance:      serverInstance,
+	}
+}
+
+func (u *UnleashInstance) ApiUrl() string {
+	if u.ServerInstance != nil {
+		return fmt.Sprintf("https://%s/api/", u.ServerInstance.Spec.ApiIngress.Host)
+	} else {
+		return ""
+	}
+}
+
+func (u *UnleashInstance) WebUrl() string {
+	if u.ServerInstance != nil {
+		return fmt.Sprintf("https://%s/", u.ServerInstance.Spec.WebIngress.Host)
+	} else {
+		return ""
+	}
+}
+
+func (u *UnleashInstance) Status() string {
+	if u.ServerInstance != nil {
+		if u.ServerInstance.Status.IsReady() {
+			return "Ready"
+		} else {
+			return "Not ready"
+		}
+	} else {
+		return "Status unknown"
+	}
+}
+
+func (u *UnleashInstance) StatusLabel() string {
+	if u.ServerInstance != nil {
+		if u.ServerInstance.Status.IsReady() {
+			return "green"
+		} else {
+			return "red"
+		}
+	} else {
+		return "orange"
+	}
+}
+
+func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service) error {
+	database, err := getDatabase(ctx, client, u.DatabaseInstance, u.TeamName)
+	if err != nil {
+		return err
+	}
+
+	u.Database = database
+
+	return nil
+}
+
+func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
+	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.TeamName)
 	if err != nil {
 		return err
 	}
@@ -33,80 +95,13 @@ func (u *Unleash) GetDatabaseUser(ctx context.Context, client *admin.Service) er
 	return nil
 }
 
-func (u *Unleash) Delete(ctx context.Context, googleClient *admin.Service, kubeClient ctrl.Client) error {
-	serverErr := deleteServer(ctx, kubeClient, u.KubernetesNamespace, u.TeamName)
-	netPolErr := deleteFQDNNetworkPolicy(ctx, kubeClient, u.KubernetesNamespace, u.Database.Name)
-	dbUserSecretErr := deleteDatabaseUserSecret(ctx, kubeClient, u.KubernetesNamespace, u.Database.Name)
-	dbUserErr := deleteDatabaseUser(ctx, googleClient, u.DatabaseInstance, u.Database.Name)
-	dbErr := deleteDatabase(ctx, googleClient, u.DatabaseInstance, u.Database.Name)
-
-	return errors.Join(serverErr, netPolErr, dbUserSecretErr, dbUserErr, dbErr)
-}
-
-func GetInstances(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, kubeNamespace string) ([]Unleash, error) {
-	databases, err := getDatabases(ctx, googleClient, databaseInstance)
-	if err != nil {
-		return nil, err
-	}
-
-	var instances []Unleash
-
-	for _, database := range databases {
-		if database.Name == "postgres" {
-			continue
-		}
-
-		instances = append(instances, Unleash{
-			TeamName:            database.Name,
-			KubernetesNamespace: kubeNamespace,
-			DatabaseInstance:    databaseInstance,
-			Database:            database,
-		})
-	}
-
-	return instances, nil
-}
-
-func GetInstance(ctx context.Context, googleClient *admin.Service, databaseInstance *admin.DatabaseInstance, databaseName string, kubeNamespace string) (Unleash, error) {
-	database, err := getDatabase(ctx, googleClient, databaseInstance, databaseName)
-	if err != nil {
-		return Unleash{}, err
-	}
-
-	return Unleash{
-		TeamName:            database.Name,
-		KubernetesNamespace: kubeNamespace,
-		DatabaseInstance:    databaseInstance,
-		Database:            database,
-	}, nil
-}
-
-func CreateInstance(ctx context.Context,
-	googleClient *admin.Service,
-	databaseInstance *admin.DatabaseInstance,
-	databaseName string,
-	config *config.Config,
-	kubeClient ctrl.Client,
-) error {
-	database, dbErr := createDatabase(ctx, googleClient, databaseInstance, databaseName)
-	databaseUser, dbUserErr := createDatabaseUser(ctx, googleClient, databaseInstance, databaseName)
-	secretErr := createDatabaseUserSecret(ctx, kubeClient, config.Unleash.InstanceNamespace, databaseInstance, database, databaseUser)
-	fqdnCreationError := createFQDNNetworkPolicy(ctx, kubeClient, config.Unleash.InstanceNamespace, database.Name)
-	createCrdError := createServer(ctx, kubeClient, config, databaseName)
-
-	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError, createCrdError); err != nil {
-		return err
-	}
-	return nil
-}
-
 func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
 	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}}
 	return kubeClient.Delete(ctx, &unleashDefinition)
 }
 
 func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName string) error {
-	unleashDefinition := newUnleashSpec(config, teamName)
+	unleashDefinition := NewUnleashSpec(config, teamName)
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 

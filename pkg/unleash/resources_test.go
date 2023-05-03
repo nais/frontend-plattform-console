@@ -103,7 +103,7 @@ func TestNewUnleashSpec(t *testing.T) {
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
 
-	a := newUnleashSpec(&c, teamName)
+	a := NewUnleashSpec(&c, teamName)
 	b := unleashv1.Unleash{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Unleash",

@@ -10,6 +10,7 @@ import (
 	"github.com/nais/bifrost/pkg/config"
 	"github.com/nais/bifrost/pkg/handler"
 	"github.com/nais/bifrost/pkg/server/utils"
+	"github.com/nais/bifrost/pkg/unleash"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
 	admin "google.golang.org/api/sqladmin/v1beta4"
@@ -76,42 +77,25 @@ func initKubenetesClient() (ctrl.Client, error) {
 }
 
 func initLogger() *logrus.Logger {
-	log := logrus.New()
-	log.SetLevel(logrus.DebugLevel)
-	log.SetFormatter(&logrus.JSONFormatter{
+	logger := logrus.New()
+	logger.SetLevel(logrus.DebugLevel)
+	logger.SetFormatter(&logrus.JSONFormatter{
 		TimestampFormat: "2006-01-02 15:04:05",
 	})
 
-	return log
+	return logger
 }
 
-func Run(config *config.Config) {
+func setupRouter(config *config.Config, logger *logrus.Logger, unleashService unleash.IUnleashService) *gin.Engine {
 	router := gin.Default()
+	gin.DefaultWriter = logger.Writer()
 
-	log := initLogger()
-	gin.DefaultWriter = log.Writer()
-
-	kubeClient, err := initKubenetesClient()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	googleClient, err := initGoogleClient(context.Background())
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	unleashInstance, err := initUnleashSQLInstance(context.Background(), googleClient, config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	h := handler.NewHandler(kubeClient, googleClient, config, unleashInstance, log)
+	h := handler.NewHandler(config, logger, unleashService)
 
 	router.Use(h.ErrorHandler)
 	router.Static("/assets", "./assets")
 
-	router.HTMLRender = utils.LoadTemplates("./templates")
+	router.HTMLRender = utils.LoadTemplates(config.Server.TemplatesDir)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", gin.H{
 			"title": "Frontend Plattform",
@@ -135,8 +119,33 @@ func Run(config *config.Config) {
 		}
 	}
 
-	fmt.Printf("Listening on %s", config.GetServerAddr())
+	return router
+}
+
+func Run(config *config.Config) {
+	logger := initLogger()
+
+	kubeClient, err := initKubenetesClient()
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	googleClient, err := initGoogleClient(context.Background())
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	unleashInstance, err := initUnleashSQLInstance(context.Background(), googleClient, config)
+	if err != nil {
+		logger.Fatal(err)
+	}
+
+	unleashService := unleash.NewUnleashService(googleClient, kubeClient, unleashInstance, config, logger)
+
+	router := setupRouter(config, logger, unleashService)
+
+	logger.Infof("Listening on %s", config.GetServerAddr())
 	if err := router.Run(config.GetServerAddr()); err != nil {
-		log.Fatal(err)
+		logger.Fatal(err)
 	}
 }
