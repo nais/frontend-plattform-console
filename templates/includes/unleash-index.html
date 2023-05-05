@@ -21,9 +21,13 @@
 <div class="ui relaxed divided list">
   {{ range .instances }}
   <div class="item">
+    {{ if not .IsReady }}
     <div class="right floated content">
-      <a class="ui button" href="{{ .TeamName }}/"><i class="eye icon"></i> View</a>
+      <div class="ui {{ .StatusLabel }} label">
+        <i class="exclamation triangle icon"></i> {{ .Status }}
+      </div>
     </div>
+    {{ end }}
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">
       <a class="header" href="{{ .TeamName }}">{{ .TeamName }}</a>
