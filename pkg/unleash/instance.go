@@ -49,6 +49,10 @@ func (u *UnleashInstance) WebUrl() string {
 	}
 }
 
+func (u *UnleashInstance) IsReady() bool {
+	return u.ServerInstance.Status.IsReady()
+}
+
 func (u *UnleashInstance) Status() string {
 	if u.ServerInstance != nil {
 		if u.ServerInstance.Status.IsReady() {
