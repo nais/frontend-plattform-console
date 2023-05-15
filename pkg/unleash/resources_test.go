@@ -133,7 +133,7 @@ func TestNewUnleashSpec(t *testing.T) {
 			ApiIngress: unleashv1.IngressConfig{
 				Enabled: true,
 				Host:    "my-team-unleash-api.example.com",
-				Path:    "/api",
+				Path:    "/",
 				Class:   "unleash-api-ingress-class",
 			},
 			NetworkPolicy: unleashv1.NetworkPolicyConfig{

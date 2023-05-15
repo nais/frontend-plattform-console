@@ -117,7 +117,8 @@ func NewUnleashSpec(
 			ApiIngress: unleashv1.IngressConfig{
 				Enabled: true,
 				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceAPIIngressHost),
-				Path:    "/api",
+				// Allow access to /health endpoint, change to /api when https://github.com/nais/unleasherator/issues/100 is resolved
+				Path:    "/",
 				Class:   c.Unleash.InstanceAPIIngressClass,
 			},
 			NetworkPolicy: unleashv1.NetworkPolicyConfig{
