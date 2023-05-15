@@ -4,6 +4,8 @@ unleash_namespace="bifrost-unleash"
 operator_namespace="nais-system"
 
 function help() {
+  echo "Sync unleash instance config from management to tenant"
+  echo "-----------------------------------------------------"
   echo "Usage: $0 <command>"
   echo "Commands:"
   echo "  help: show this help"
@@ -80,7 +82,7 @@ spec:
   echo "cat $tmp_secret_file"
   echo "cat $tmp_remoteunleash_file"
   echo ""
-  echo "If everything looks good, run the following commands:"
+  echo "If everything looks good, run the following commands for each tenant cluster:"
   echo "kubectl apply -f $tmp_secret_file -n $operator_namespace"
   echo "kubectl apply -f $tmp_remoteunleash_file -n $unleash_name"
 }
