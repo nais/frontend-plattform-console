@@ -38,7 +38,7 @@ function copy() {
 
   unleash_name=$2
   secret_name="unleasherator-$unleash_namespace-$unleash_name-admin-key"
-  random_string=$(openssl rand -base64 10 | tr -dc 'a-zA-Z0-9')
+  random_string=$(openssl rand -base64 10 | tr -dc 'a-zA-Z0-9' | tr '[:upper:]' '[:lower:]')
   new_secret_name="unleasherator-$unleash_name-admin-key-$random_string"
 
   echo "Creating temporary directory $tmp_dir..."
