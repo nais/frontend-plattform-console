@@ -99,7 +99,7 @@ func NewUnleashSpec(
 		},
 		Spec: unleashv1.UnleashSpec{
 			Size: 1,
-			Database: unleashv1.DatabaseConfig{
+			Database: unleashv1.UnleashDatabaseConfig{
 				Host:                  "localhost",
 				Port:                  "5432",
 				SSL:                   "false",
@@ -108,20 +108,20 @@ func NewUnleashSpec(
 				SecretPassKey:         "POSTGRES_PASSWORD",
 				SecretDatabaseNameKey: "POSTGRES_DB",
 			},
-			WebIngress: unleashv1.IngressConfig{
+			WebIngress: unleashv1.UnleashIngressConfig{
 				Enabled: true,
 				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceWebIngressHost),
 				Path:    "/",
 				Class:   c.Unleash.InstanceWebIngressClass,
 			},
-			ApiIngress: unleashv1.IngressConfig{
+			ApiIngress: unleashv1.UnleashIngressConfig{
 				Enabled: true,
 				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceAPIIngressHost),
 				// Allow access to /health endpoint, change to /api when https://github.com/nais/unleasherator/issues/100 is resolved
-				Path:    "/",
-				Class:   c.Unleash.InstanceAPIIngressClass,
+				Path:  "/",
+				Class: c.Unleash.InstanceAPIIngressClass,
 			},
-			NetworkPolicy: unleashv1.NetworkPolicyConfig{
+			NetworkPolicy: unleashv1.UnleashNetworkPolicyConfig{
 				Enabled:  true,
 				AllowDNS: true,
 				ExtraEgressRules: []networkingv1.NetworkPolicyEgressRule{
