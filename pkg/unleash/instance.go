@@ -50,12 +50,12 @@ func (u *UnleashInstance) WebUrl() string {
 }
 
 func (u *UnleashInstance) IsReady() bool {
-	return u.ServerInstance.Status.IsReady()
+	return u.ServerInstance.IsReady()
 }
 
 func (u *UnleashInstance) Status() string {
 	if u.ServerInstance != nil {
-		if u.ServerInstance.Status.IsReady() {
+		if u.ServerInstance.IsReady() {
 			return "Ready"
 		} else {
 			return "Not ready"
@@ -67,7 +67,7 @@ func (u *UnleashInstance) Status() string {
 
 func (u *UnleashInstance) StatusLabel() string {
 	if u.ServerInstance != nil {
-		if u.ServerInstance.Status.IsReady() {
+		if u.ServerInstance.IsReady() {
 			return "green"
 		} else {
 			return "red"
