@@ -28,9 +28,9 @@ func (s *MockUnleashService) List(ctx context.Context) ([]*unleash.UnleashInstan
 	return s.Instances, nil
 }
 
-func (s *MockUnleashService) Get(ctx context.Context, teamName string) (*unleash.UnleashInstance, error) {
+func (s *MockUnleashService) Get(ctx context.Context, name string) (*unleash.UnleashInstance, error) {
 	for _, instance := range s.Instances {
-		if instance.TeamName == teamName {
+		if instance.Name == name {
 			return instance, nil
 		}
 	}
@@ -38,11 +38,11 @@ func (s *MockUnleashService) Get(ctx context.Context, teamName string) (*unleash
 	return nil, fmt.Errorf("instance not found")
 }
 
-func (s *MockUnleashService) Create(ctx context.Context, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	spec := unleash.UnleashSpec(s.c, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+func (s *MockUnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	spec := unleash.UnleashSpec(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
 	s.Instances = append(s.Instances, &unleash.UnleashInstance{
-		TeamName:       teamName,
+		Name:           name,
 		CreatedAt:      metav1.Now(),
 		ServerInstance: &spec,
 	})
@@ -50,11 +50,11 @@ func (s *MockUnleashService) Create(ctx context.Context, teamName, customVersion
 	return nil
 }
 
-func (s *MockUnleashService) Update(ctx context.Context, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	spec := unleash.UnleashSpec(s.c, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+func (s *MockUnleashService) Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	spec := unleash.UnleashSpec(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
 	for _, instance := range s.Instances {
-		if instance.TeamName == teamName {
+		if instance.Name == name {
 			instance.ServerInstance = &spec
 			return nil
 		}
@@ -63,9 +63,9 @@ func (s *MockUnleashService) Update(ctx context.Context, teamName, customVersion
 	return fmt.Errorf("instance not found")
 }
 
-func (s *MockUnleashService) Delete(ctx context.Context, teamName string) error {
+func (s *MockUnleashService) Delete(ctx context.Context, name string) error {
 	for i, instance := range s.Instances {
-		if instance.TeamName == teamName {
+		if instance.Name == name {
 			s.Instances = append(s.Instances[:i], s.Instances[i+1:]...)
 			return nil
 		}
@@ -115,12 +115,12 @@ func newUnleashRoute() (c *config.Config, service *MockUnleashService, router *g
 		c: c,
 		Instances: []*unleash.UnleashInstance{
 			{
-				TeamName:       "team1",
+				Name:           "team1",
 				CreatedAt:      metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 				ServerInstance: &unleashv1.Unleash{},
 			},
 			{
-				TeamName:       "team2",
+				Name:           "team2",
 				CreatedAt:      metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 				ServerInstance: &unleashv1.Unleash{},
 			},
@@ -173,7 +173,7 @@ func TestUnleashNew(t *testing.T) {
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, "/unleash/my-name", w.Header().Get("Location"))
 	assert.Equal(t, 3, len(service.Instances))
-	assert.Equal(t, "my-name", service.Instances[2].TeamName)
+	assert.Equal(t, "my-name", service.Instances[2].Name)
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("name=my-name&custom-image-version=1.2.3&allowed-teams=team1,team2&allowed-namespaces=ns1,ns2&allowed-clusters=cluster1,cluster2"))
@@ -182,7 +182,7 @@ func TestUnleashNew(t *testing.T) {
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, "/unleash/my-name", w.Header().Get("Location"))
 	assert.Equal(t, 4, len(service.Instances))
-	assert.Equal(t, "my-name", service.Instances[3].TeamName)
+	assert.Equal(t, "my-name", service.Instances[3].Name)
 	assert.Equal(t, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3", service.Instances[3].ServerInstance.Spec.CustomImage)
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_TEAMS", Value: "team1,team2"})
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_NAMESPACES", Value: "ns1,ns2"})
@@ -216,11 +216,11 @@ func TestUnleashDelete(t *testing.T) {
 		c: c,
 		Instances: []*unleash.UnleashInstance{
 			{
-				TeamName:  "team1",
+				Name:      "team1",
 				CreatedAt: metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 			{
-				TeamName:  "team2",
+				Name:      "team2",
 				CreatedAt: metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		},

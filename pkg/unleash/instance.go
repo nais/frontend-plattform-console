@@ -14,7 +14,7 @@ import (
 )
 
 type UnleashInstance struct {
-	TeamName            string
+	Name                string
 	KubernetesNamespace string
 	CreatedAt           metav1.Time
 	ServerInstance      *unleashv1.Unleash
@@ -26,7 +26,7 @@ type UnleashInstance struct {
 
 func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
 	return &UnleashInstance{
-		TeamName:            serverInstance.ObjectMeta.Name,
+		Name:                serverInstance.ObjectMeta.Name,
 		KubernetesNamespace: serverInstance.ObjectMeta.Namespace,
 		CreatedAt:           serverInstance.ObjectMeta.CreationTimestamp,
 		ServerInstance:      serverInstance,
@@ -78,7 +78,7 @@ func (u *UnleashInstance) StatusLabel() string {
 }
 
 func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service) error {
-	database, err := getDatabase(ctx, client, u.DatabaseInstance, u.TeamName)
+	database, err := getDatabase(ctx, client, u.DatabaseInstance, u.Name)
 	if err != nil {
 		return err
 	}
@@ -89,7 +89,7 @@ func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service
 }
 
 func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
-	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.TeamName)
+	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.Name)
 	if err != nil {
 		return err
 	}

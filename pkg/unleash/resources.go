@@ -28,12 +28,12 @@ func int64Ref(i int64) *int64 {
 	return &intvar
 }
 
-func FQDNNetworkPolicySpec(teamName string, kubeNamespace string) fqdnV1alpha3.FQDNNetworkPolicy {
+func FQDNNetworkPolicySpec(name string, kubeNamespace string) fqdnV1alpha3.FQDNNetworkPolicy {
 	protocolTCP := corev1.ProtocolTCP
 
 	return fqdnV1alpha3.FQDNNetworkPolicy{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      fmt.Sprintf("%s-fqdn", teamName),
+			Name:      fmt.Sprintf("%s-fqdn", name),
 			Namespace: kubeNamespace,
 		},
 		TypeMeta: metav1.TypeMeta{
@@ -43,7 +43,7 @@ func FQDNNetworkPolicySpec(teamName string, kubeNamespace string) fqdnV1alpha3.F
 		Spec: fqdnV1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/instance":   teamName,
+					"app.kubernetes.io/instance":   name,
 					"app.kubernetes.io/part-of":    "unleasherator",
 					"app.kubernetes.io/name":       "Unleash",
 					"app.kubernetes.io/created-by": "controller-manager",
@@ -118,7 +118,7 @@ func UnleashVariables(server *unleashv1.Unleash) (name, customVersion, allowedTe
 
 func UnleashSpec(
 	c *config.Config,
-	teamName,
+	name,
 	customVersion,
 	allowedTeams,
 	allowedNamespaces,
@@ -140,7 +140,7 @@ func UnleashSpec(
 			APIVersion: "unleash.nais.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      teamName,
+			Name:      name,
 			Namespace: c.Unleash.InstanceNamespace,
 		},
 		Spec: unleashv1.UnleashSpec{
@@ -149,20 +149,20 @@ func UnleashSpec(
 				Host:                  "localhost",
 				Port:                  "5432",
 				SSL:                   "false",
-				SecretName:            teamName,
+				SecretName:            name,
 				SecretUserKey:         "POSTGRES_USER",
 				SecretPassKey:         "POSTGRES_PASSWORD",
 				SecretDatabaseNameKey: "POSTGRES_DB",
 			},
 			WebIngress: unleashv1.UnleashIngressConfig{
 				Enabled: true,
-				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceWebIngressHost),
+				Host:    fmt.Sprintf("%s-%s", name, c.Unleash.InstanceWebIngressHost),
 				Path:    "/",
 				Class:   c.Unleash.InstanceWebIngressClass,
 			},
 			ApiIngress: unleashv1.UnleashIngressConfig{
 				Enabled: true,
-				Host:    fmt.Sprintf("%s-%s", teamName, c.Unleash.InstanceAPIIngressHost),
+				Host:    fmt.Sprintf("%s-%s", name, c.Unleash.InstanceAPIIngressHost),
 				// Allow access to /health endpoint, change to /api when https://github.com/nais/unleasherator/issues/100 is resolved
 				Path:  "/",
 				Class: c.Unleash.InstanceAPIIngressClass,
