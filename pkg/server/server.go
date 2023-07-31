@@ -108,14 +108,14 @@ func setupRouter(config *config.Config, logger *logrus.Logger, unleashService un
 	{
 		unleash.GET("/", h.UnleashIndex)
 		unleash.GET("/new", h.UnleashNew)
-		unleash.POST("/new", h.UnleashNewPost)
+		unleash.POST("/new", h.UnleashInstancePost)
 
 		unleashInstance := unleash.Group("/:id")
 		unleashInstance.Use(h.UnleashInstanceMiddleware)
 		{
 			unleashInstance.GET("/", h.UnleashInstanceShow)
 			unleashInstance.GET("/edit", h.UnleashInstanceEdit)
-			unleashInstance.POST("/edit", h.UnleashInstanceEditPost)
+			unleashInstance.POST("/edit", h.UnleashInstancePost)
 			unleashInstance.GET("/delete", h.UnleashInstanceDelete)
 			unleashInstance.POST("/delete", h.UnleashInstanceDeletePost)
 		}

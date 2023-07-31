@@ -7,13 +7,9 @@
   {{ if eq .action "create" }}
   <div class="active section">New Unleash Instance</div>
   {{ else }}
-  <a class="section" href="/unleash/{{ .instance.TeamName }}">{{ .instance.TeamName }}</a>
+  <a class="section" href="/unleash/{{ .name }}">{{ .name }}</a>
   <div class="divider"> / </div>
-  {{ if eq .action "edit" }}
   <div class="active section">Edit</div>
-  {{ else if eq .action "delete" }}
-  <div class="active section">Delete</div>
-  {{ end }}
   {{ end }}
 </div>
 
@@ -22,11 +18,11 @@
 <form class="ui form{{ if .error }} error{{ end }}" method="POST">
   <div class="field">
     <div class="two fields">
-      <div class="field">
+      <div class="name field{{ if .nameError}} error{{ end }}">
         <label>Instance Name</label>
-        <input name="name" type="text" disabled value="{{ .name }}">
+        <input name="name" type="text"{{ if eq .action "edit" }} disabled{{ end }} value="{{ .name }}">
       </div>
-      <div class="field{{ if .customImageVersionError }} error{{ end }}">
+      <div class="version field{{ if .customImageVersionError }} error{{ end }}">
         <label>Custom Version</label>
         <div class="ui labeled input">
           <div class="ui label">{{ .customImageName }}:</div>
@@ -94,8 +90,6 @@
     <button class="ui button" type="submit">Submit</button>
   {{ else if eq .action "edit" }}
     <button class="ui button" type="submit">Update</button>
-  {{ else if eq .action "delete" }}
-    <button class="ui danger button" type="submit">Delete</button>
   {{ end }}
 </form>
 

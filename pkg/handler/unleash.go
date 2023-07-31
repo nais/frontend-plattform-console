@@ -8,8 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/unleash"
 	"github.com/nais/bifrost/pkg/utils"
-	unleashv1 "github.com/nais/unleasherator/api/v1"
-	v1 "k8s.io/api/core/v1"
 )
 
 func (h *Handler) HealthHandler(c *gin.Context) {
@@ -101,19 +99,6 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 	})
 }
 
-func setServerEnvVar(server *unleashv1.Unleash, name, value string) {
-	for i, envVar := range server.Spec.ExtraEnvVars {
-		if envVar.Name == name {
-			server.Spec.ExtraEnvVars[i].Value = value
-			return
-		}
-	}
-	server.Spec.ExtraEnvVars = append(server.Spec.ExtraEnvVars, v1.EnvVar{
-		Name:  name,
-		Value: value,
-	})
-}
-
 func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 
@@ -131,7 +116,7 @@ func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 	})
 }
 
-func (h *Handler) UnleashInstanceSave(c *gin.Context) {
+func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	var (
 		name, title, action string
 		err                 error
@@ -165,11 +150,11 @@ func (h *Handler) UnleashInstanceSave(c *gin.Context) {
 	allowedNamespaces := c.PostForm("allowed-namespaces")
 	allowedClusters := c.PostForm("allowed-clusters")
 
-	nameError := nameValidator.MatchString(name)
-	customImageVersionError := versionValidator.MatchString(customImageVersion)
-	allowedTeamsError := listValidator.MatchString(allowedTeams)
-	allowedNamespacesError := listValidator.MatchString(allowedNamespaces)
-	allowedClustersError := listValidator.MatchString(allowedClusters)
+	nameError := !nameValidator.MatchString(name)
+	customImageVersionError := !versionValidator.MatchString(customImageVersion)
+	allowedTeamsError := !listValidator.MatchString(allowedTeams)
+	allowedNamespacesError := !listValidator.MatchString(allowedNamespaces)
+	allowedClustersError := !listValidator.MatchString(allowedClusters)
 
 	if nameError || customImageVersionError || allowedTeamsError || allowedNamespacesError || allowedClustersError {
 		c.HTML(400, "unleash-form.html", gin.H{
@@ -210,10 +195,9 @@ func (h *Handler) UnleashInstanceSave(c *gin.Context) {
 func (h *Handler) UnleashInstanceDelete(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 
-	c.HTML(200, "unleash-form.html", gin.H{
-		"title":    "Delete Unleash: " + instance.TeamName,
-		"action":   "delete",
-		"instance": instance,
+	c.HTML(200, "unleash-delete.html", gin.H{
+		"title": "Delete Unleash: " + instance.TeamName,
+		"name":  instance.TeamName,
 	})
 }
 
@@ -221,14 +205,13 @@ func (h *Handler) UnleashInstanceDeletePost(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 
 	ctx := c.Request.Context()
-	teamName := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("team-name"), "")
+	name := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("name"), "")
 
-	if teamName != instance.TeamName {
-		c.HTML(400, "unleash-form.html", gin.H{
-			"title":    "Delete Unleash: " + instance.TeamName,
-			"action":   "delete",
-			"instance": instance,
-			"error":    "Team name does not match",
+	if name != instance.TeamName {
+		c.HTML(400, "unleash-delete.html", gin.H{
+			"title": "Delete Unleash: " + instance.TeamName,
+			"name":  instance.TeamName,
+			"error": "Instance name does not match",
 		})
 		return
 	}

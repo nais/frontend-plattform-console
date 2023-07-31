@@ -104,8 +104,8 @@ func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace str
 	return kubeClient.Delete(ctx, &unleashDefinition)
 }
 
-func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName, customImage, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	unleashDefinition := UnleashSpec(config, teamName, customImage, allowedTeams, allowedNamespaces, allowedClusters)
+func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	unleashDefinition := UnleashSpec(config, teamName, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
