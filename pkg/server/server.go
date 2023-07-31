@@ -114,6 +114,8 @@ func setupRouter(config *config.Config, logger *logrus.Logger, unleashService un
 		unleashInstance.Use(h.UnleashInstanceMiddleware)
 		{
 			unleashInstance.GET("/", h.UnleashInstanceShow)
+			unleashInstance.GET("/edit", h.UnleashInstanceEdit)
+			unleashInstance.POST("/edit", h.UnleashInstanceEditPost)
 			unleashInstance.GET("/delete", h.UnleashInstanceDelete)
 			unleashInstance.POST("/delete", h.UnleashInstanceDeletePost)
 		}

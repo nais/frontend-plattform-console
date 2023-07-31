@@ -15,7 +15,8 @@ import (
 type IUnleashService interface {
 	List(ctx context.Context) ([]*UnleashInstance, error)
 	Get(ctx context.Context, teamName string) (*UnleashInstance, error)
-	Create(ctx context.Context, teamName string) error
+	Create(ctx context.Context, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error
+	Update(ctx context.Context, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error
 	Delete(ctx context.Context, teamName string) error
 }
 
@@ -81,17 +82,22 @@ func (s *UnleashService) Get(ctx context.Context, teamName string) (*UnleashInst
 	return NewUnleashInstance(serverInstance), nil
 }
 
-func (s *UnleashService) Create(ctx context.Context, teamName string) error {
+func (s *UnleashService) Create(ctx context.Context, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
 	database, dbErr := createDatabase(ctx, s.googleClient, s.sqlInstance, teamName)
 	databaseUser, dbUserErr := createDatabaseUser(ctx, s.googleClient, s.sqlInstance, teamName)
 	secretErr := createDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, s.sqlInstance, database, databaseUser)
 	fqdnCreationError := createFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, database.Name)
-	createServerError := createServer(ctx, s.kubeClient, s.config, teamName)
+	createServerError := createServer(ctx, s.kubeClient, s.config, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
 	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError, createServerError); err != nil {
 		return err
 	}
 	return nil
+}
+
+func (s *UnleashService) Update(ctx context.Context, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	server := UnleashSpec(s.config, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	return s.kubeClient.Update(ctx, &server)
 }
 
 func (s *UnleashService) Delete(ctx context.Context, teamName string) error {

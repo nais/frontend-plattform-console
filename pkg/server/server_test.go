@@ -46,6 +46,17 @@ func (s *MockUnleashService) Create(ctx context.Context, teamName string) error 
 	return nil
 }
 
+func (s *MockUnleashService) Update(ctx context.Context, server *unleashv1.Unleash) error {
+	for _, instance := range s.Instances {
+		if instance.TeamName == server.Name {
+			instance.ServerInstance = server
+			return nil
+		}
+	}
+
+	return fmt.Errorf("instance not found")
+}
+
 func (s *MockUnleashService) Delete(ctx context.Context, teamName string) error {
 	for i, instance := range s.Instances {
 		if instance.TeamName == teamName {

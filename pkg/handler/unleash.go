@@ -1,12 +1,15 @@
 package handler
 
 import (
+	"fmt"
 	"html/template"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/unleash"
 	"github.com/nais/bifrost/pkg/utils"
+	unleashv1 "github.com/nais/unleasherator/api/v1"
+	v1 "k8s.io/api/core/v1"
 )
 
 func (h *Handler) HealthHandler(c *gin.Context) {
@@ -25,29 +28,6 @@ func (h *Handler) ErrorHandler(c *gin.Context) {
 		})
 	}
 }
-
-func (h *Handler) UnleashNewPost(c *gin.Context) {
-	teamName := regexp.MustCompile(`[^a-zA-Z0-9-]`).ReplaceAllString(c.PostForm("team-name"), "")
-	ctx := c.Request.Context()
-	if teamName == "" {
-		c.HTML(400, "unleash-form.html", gin.H{
-			"title":  "New Unleash Instance",
-			"action": "create",
-			"error":  "Team name can not be empty",
-		})
-		return
-	}
-
-	if err := h.unleashService.Create(ctx, teamName); err != nil {
-		c.Error(err).
-			SetType(gin.ErrorTypePublic).
-			SetMeta("Error creating unleash instance")
-		return
-	}
-
-	c.Redirect(302, "/unleash")
-}
-
 func (h *Handler) UnleashIndex(c *gin.Context) {
 	ctx := c.Request.Context()
 	instances, err := h.unleashService.List(ctx)
@@ -67,7 +47,7 @@ func (h *Handler) UnleashIndex(c *gin.Context) {
 }
 
 func (h *Handler) UnleashNew(c *gin.Context) {
-	obj := unleash.NewUnleashSpec(h.config, "my-unleash")
+	obj := unleash.UnleashSpec(h.config, "my-unleash", "", "", "", "")
 	yamlString, err := utils.StructToYaml(obj)
 	if err != nil {
 		h.logger.WithError(err).Error("Error converting Unleash struct to yaml")
@@ -119,6 +99,112 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 		"instance":     instance,
 		"instanceYaml": template.HTML(instanceYaml),
 	})
+}
+
+func setServerEnvVar(server *unleashv1.Unleash, name, value string) {
+	for i, envVar := range server.Spec.ExtraEnvVars {
+		if envVar.Name == name {
+			server.Spec.ExtraEnvVars[i].Value = value
+			return
+		}
+	}
+	server.Spec.ExtraEnvVars = append(server.Spec.ExtraEnvVars, v1.EnvVar{
+		Name:  name,
+		Value: value,
+	})
+}
+
+func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
+	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
+
+	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := unleash.UnleashVariables(instance.ServerInstance)
+
+	c.HTML(200, "unleash-form.html", gin.H{
+		"title":              "Edit Unleash: " + instance.TeamName,
+		"action":             "edit",
+		"name":               name,
+		"customImageName":    unleash.UnleashCustomImageName,
+		"customImageVersion": customVersion,
+		"allowedTeams":       allowedTeams,
+		"allowedNamespaces":  allowedNamespaces,
+		"allowedClusters":    allowedClusters,
+	})
+}
+
+func (h *Handler) UnleashInstanceSave(c *gin.Context) {
+	var (
+		name, title, action string
+		err                 error
+	)
+
+	ctx := c.Request.Context()
+
+	nameValidator := regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
+	versionValidator := regexp.MustCompile(`^[a-zA-Z0-9-_\.+]*$`)
+	listValidator := regexp.MustCompile(`^[a-zA-Z0-9-,]*$`)
+
+	instance, exists := c.Get("unleashInstance")
+	if exists {
+		instance, ok := instance.(*unleash.UnleashInstance)
+		if !ok {
+			c.Error(fmt.Errorf("could not convert instance to UnleashInstance"))
+			return
+		}
+
+		name = instance.TeamName
+		title = "Edit Unleash: " + name
+		action = "edit"
+	} else {
+		name = c.PostForm("name")
+		title = "New Unleash Instance"
+		action = "create"
+	}
+
+	customImageVersion := c.PostForm("custom-image-version")
+	allowedTeams := c.PostForm("allowed-teams")
+	allowedNamespaces := c.PostForm("allowed-namespaces")
+	allowedClusters := c.PostForm("allowed-clusters")
+
+	nameError := nameValidator.MatchString(name)
+	customImageVersionError := versionValidator.MatchString(customImageVersion)
+	allowedTeamsError := listValidator.MatchString(allowedTeams)
+	allowedNamespacesError := listValidator.MatchString(allowedNamespaces)
+	allowedClustersError := listValidator.MatchString(allowedClusters)
+
+	if nameError || customImageVersionError || allowedTeamsError || allowedNamespacesError || allowedClustersError {
+		c.HTML(400, "unleash-form.html", gin.H{
+			"title":                   title,
+			"action":                  action,
+			"name":                    name,
+			"customImageVersion":      customImageVersion,
+			"customImageName":         unleash.UnleashCustomImageName,
+			"allowedTeams":            allowedTeams,
+			"allowedNamespaces":       allowedNamespaces,
+			"allowedClusters":         allowedClusters,
+			"nameError":               nameError,
+			"customImageVersionError": customImageVersionError,
+			"allowedTeamsError":       allowedTeamsError,
+			"allowedNamespacesError":  allowedNamespacesError,
+			"allowedClustersError":    allowedClustersError,
+			"error":                   "Input validation failed, see errors in above fields",
+		})
+		return
+	}
+
+	if action == "edit" {
+		err = h.unleashService.Update(ctx, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	} else {
+		err = h.unleashService.Create(ctx, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	}
+
+	if err != nil {
+		c.Error(err).
+			SetType(gin.ErrorTypePublic).
+			SetMeta("Error persisting Unleash instance, check server logs")
+		return
+	}
+
+	c.Redirect(302, "/unleash/"+name)
 }
 
 func (h *Handler) UnleashInstanceDelete(c *gin.Context) {

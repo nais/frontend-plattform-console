@@ -104,8 +104,8 @@ func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace str
 	return kubeClient.Delete(ctx, &unleashDefinition)
 }
 
-func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName string) error {
-	unleashDefinition := NewUnleashSpec(config, teamName)
+func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName, customImage, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	unleashDefinition := UnleashSpec(config, teamName, customImage, allowedTeams, allowedNamespaces, allowedClusters)
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
@@ -115,6 +115,6 @@ func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNa
 }
 
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
-	fqdn := newFQDNNetworkPolicySpec(teamName, kubeNamespace)
+	fqdn := FQDNNetworkPolicySpec(teamName, kubeNamespace)
 	return kubeClient.Create(ctx, &fqdn)
 }

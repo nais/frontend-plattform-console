@@ -19,7 +19,7 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 
 	protocolTCP := corev1.ProtocolTCP
 
-	a := newFQDNNetworkPolicySpec(teamName, kubeNamespace)
+	a := FQDNNetworkPolicySpec(teamName, kubeNamespace)
 	b := fqdnV1alpha3.FQDNNetworkPolicy{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "FQDNNetworkPolicy",
@@ -99,11 +99,15 @@ func TestNewUnleashSpec(t *testing.T) {
 		CloudConnectorProxy: "repo/connector:latest",
 	}
 	teamName := "my-team"
+	customVersion := ""
+	allowedTeams := ""
+	allowedNamespaces := ""
+	allowedClusters := ""
 
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
 
-	a := NewUnleashSpec(&c, teamName)
+	a := UnleashSpec(&c, teamName, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 	b := unleashv1.Unleash{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Unleash",
