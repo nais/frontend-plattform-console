@@ -38,7 +38,6 @@
   <div class="item">
     <div class="right floated content">
       {{ if len .unleashAllowedTeams }}
-      {{ len .unleashAllowedTeams }}
       {{ range $index, $element := .unleashAllowedTeams }}
         <span class="ui label">{{ $element }}</span>
       {{ end }}
@@ -105,6 +104,17 @@
     </div>
     <!-- <i class="large internet explorer middle aligned icon"></i>-->
     <div class="content">Custom Version</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashLogLevel }}
+      <div class="ui label">{{ .unleashLogLevel }}</div>
+      {{ else }}
+      <div class="ui yellow label">Unknown</div>
+      {{ end }}
+    </div>
+    <!-- <i class="large internet explorer middle aligned icon"></i>-->
+    <div class="content">Log Level</div>
   </div>
   <div class="item">
     <div class="right floated content">

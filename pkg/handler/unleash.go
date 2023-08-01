@@ -113,6 +113,7 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 		"unleashAllowedTeams":      splitNoEmpty(uc.AllowedTeams, ","),
 		"unleashAllowedNamespaces": splitNoEmpty(uc.AllowedNamespaces, ","),
 		"unleashAllowedClusters":   splitNoEmpty(uc.AllowedClusters, ","),
+		"unleashLogLevel":          uc.LogLevel,
 		"googleProjectID":          h.config.Google.ProjectID,
 		"sqlInstanceID":            h.config.Unleash.SQLInstanceID,
 		"sqlInstanceAddress":       h.config.Unleash.SQLInstanceAddress,
