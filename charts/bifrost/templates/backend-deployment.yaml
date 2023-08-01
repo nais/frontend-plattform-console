@@ -54,6 +54,14 @@ spec:
               value: {{ .Values.backend.google.projectNumber | quote }}
             - name: BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID
               value: {{ .Values.backend.google.iapBackendServiceId | quote }}
+            # Teams
+            - name: BIFROST_TEAMS_API_URL
+              value: {{ .Values.backend.teams.apiUrl | quote }}
+            - name: BIFROST_TEAMS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bifrost.fullname" . }}-backend
+                  key: {{ .Values.backend.teams.apiTokenSecretKey }}
             # Unleash
             - name: BIFROST_UNLEASH_SQL_INSTANCE_ID
               value: {{ .Values.backend.unleash.sqlInstanceId | quote }}
@@ -73,6 +81,12 @@ spec:
               value: {{ .Values.backend.unleash.apiIngressClass | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST
               value: {{ .Values.backend.unleash.apiIngressHost | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_TEAMS_API_URL
+              value: {{ .Values.backend.unleash.teamsApiUrl | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_TEAMS_API_SECRET_NAME
+              value: {{ .Values.backend.unleash.teamsApiSecretName | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_TEAMS_API_TOKEN_SECRET_KEY
+              value: {{ .Values.backend.unleash.teamsApiTokenSecretKey | quote }}
           ports:
             - name: http
               containerPort: 8080

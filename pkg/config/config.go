@@ -42,9 +42,9 @@ type UnleashConfig struct {
 	InstanceWebIngressClass string `env:"BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_CLASS,required"`
 	InstanceAPIIngressHost  string `env:"BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST,required"`
 	InstanceAPIIngressClass string `env:"BIFROST_UNLEASH_INSTANCE_API_INGRESS_CLASS,required"`
-	TeamsApiURL             string `env:"BIFROST_UNLEASH_TEAMS_API_URL,required"`
-	TeamsApiSecretName      string `env:"BIFROST_UNLEASH_TEAMS_API_SECRET_NAME,required"`
-	TeamsApiSecretTokenKey  string `env:"BIFROST_UNLEASH_TEAMS_API_SECRET_TOKEN_KEY,required"`
+	TeamsApiURL             string `env:"BIFROST_UNLEASH_INSTANCE_TEAMS_API_URL,required"`
+	TeamsApiSecretName      string `env:"BIFROST_UNLEASH_INSTANCE_TEAMS_API_SECRET_NAME,required"`
+	TeamsApiSecretTokenKey  string `env:"BIFROST_UNLEASH_INSTANCE_TEAMS_API_TOKEN_SECRET_KEY,required"`
 }
 
 type Config struct {
