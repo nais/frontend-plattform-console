@@ -14,13 +14,62 @@ import (
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestNewFQDNNetworkPolicySpec(t *testing.T) {
+func TestVersionFromImage(t *testing.T) {
+	image := "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3"
+	expectedVersion := "1.2.3"
+
+	version := versionFromImage(image)
+
+	assert.Equal(t, expectedVersion, version)
+}
+
+func TestGetServerEnvVar(t *testing.T) {
+	server := &unleashv1.Unleash{
+		Spec: unleashv1.UnleashSpec{
+			ExtraEnvVars: []corev1.EnvVar{
+				{
+					Name:  "TEAMS_ALLOWED_TEAMS",
+					Value: "team-a,team-b",
+				},
+				{
+					Name:  "TEAMS_ALLOWED_NAMESPACES",
+					Value: "namespace-a,namespace-b",
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "team-a,team-b", getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", "default-value"))
+	assert.Equal(t, "default-value", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value"))
+}
+
+func TestCustomImageForVersion(t *testing.T) {
+	customVersion := "1.2.3"
+	expectedImage := "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3"
+
+	assert.Equal(t, expectedImage, customImageForVersion(customVersion))
+}
+
+func TestUnleashVariables(t *testing.T) {
+	c := config.Config{}
+
+	unleashInstance := UnleashDefinition(&c, "my-team", "1.2.3", "team-a,team-b", "namespace-a,namespace-b", "cluster-a,cluster-b")
+	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := UnleashVariables(&unleashInstance)
+
+	assert.Equal(t, "my-team", name)
+	assert.Equal(t, "1.2.3", customVersion)
+	assert.Equal(t, "team-a,team-b", allowedTeams)
+	assert.Equal(t, "namespace-a,namespace-b", allowedNamespaces)
+	assert.Equal(t, "cluster-a,cluster-b", allowedClusters)
+}
+
+func TestFQDNNetworkPolicySpec(t *testing.T) {
 	teamName := "my-team"
 	kubeNamespace := "my-teamspace"
 
 	protocolTCP := corev1.ProtocolTCP
 
-	a := FQDNNetworkPolicySpec(teamName, kubeNamespace)
+	a := FQDNNetworkPolicyDefinition(teamName, kubeNamespace)
 	b := fqdnV1alpha3.FQDNNetworkPolicy{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "FQDNNetworkPolicy",
@@ -49,7 +98,7 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 					},
 					To: []fqdnV1alpha3.FQDNNetworkPolicyPeer{
 						{
-							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com"},
+							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com"},
 						},
 					},
 				},
@@ -79,7 +128,7 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 	}
 }
 
-func TestNewUnleashSpec(t *testing.T) {
+func TestUnleashSpec(t *testing.T) {
 	c := config.Config{
 		Google: config.GoogleConfig{
 			ProjectID:           "my-project",
@@ -110,7 +159,7 @@ func TestNewUnleashSpec(t *testing.T) {
 	teamsApiPort := intstr.FromInt(3000)
 
 	t.Run("default values", func(t *testing.T) {
-		a := UnleashSpec(&c, "my-team", "", "", "", "")
+		a := UnleashDefinition(&c, "my-team", "", "", "", "")
 		b := unleashv1.Unleash{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Unleash",
@@ -228,7 +277,7 @@ func TestNewUnleashSpec(t *testing.T) {
 	})
 
 	t.Run("custom single values", func(t *testing.T) {
-		a := UnleashSpec(&c, "my-team", "9.9.9", "my-team", "my-team-ns", "my-cluster")
+		a := UnleashDefinition(&c, "my-team", "9.9.9", "my-team", "my-team-ns", "my-cluster")
 
 		assert.Equal(t, a.Spec.CustomImage, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:9.9.9")
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
@@ -248,7 +297,7 @@ func TestNewUnleashSpec(t *testing.T) {
 	})
 
 	t.Run("custom multiple values", func(t *testing.T) {
-		a := UnleashSpec(&c, "my-team", "9.9.9", "team-a,team-b,team-c", "ns-a,ns-b,ns-c", "cluster-a,cluster-b,cluster-c")
+		a := UnleashDefinition(&c, "my-team", "9.9.9", "team-a,team-b,team-c", "ns-a,ns-b,ns-c", "cluster-a,cluster-b,cluster-c")
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
 			Name:  "TEAMS_ALLOWED_TEAMS",

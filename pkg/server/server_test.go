@@ -39,7 +39,7 @@ func (s *MockUnleashService) Get(ctx context.Context, name string) (*unleash.Unl
 }
 
 func (s *MockUnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	spec := unleash.UnleashSpec(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	spec := unleash.UnleashDefinition(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
 	s.Instances = append(s.Instances, &unleash.UnleashInstance{
 		Name:           name,
@@ -51,7 +51,7 @@ func (s *MockUnleashService) Create(ctx context.Context, name, customVersion, al
 }
 
 func (s *MockUnleashService) Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	spec := unleash.UnleashSpec(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	spec := unleash.UnleashDefinition(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
 	for _, instance := range s.Instances {
 		if instance.Name == name {

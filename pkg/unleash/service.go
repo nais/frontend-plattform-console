@@ -20,21 +20,33 @@ type IUnleashService interface {
 	Delete(ctx context.Context, name string) error
 }
 
-type UnleashService struct {
-	googleClient *admin.Service
-	sqlInstance  *admin.DatabaseInstance
-	kubeClient   ctrl.Client
-	config       *config.Config
-	logger       *logrus.Logger
+type ISQLDatabasesService interface {
+	Get(project string, instance string, database string) *admin.DatabasesGetCall
+	Insert(project string, instance string, database *admin.Database) *admin.DatabasesInsertCall
+	Delete(project string, instance string, database string) *admin.DatabasesDeleteCall
 }
 
-func NewUnleashService(googleClient *admin.Service, kubeClient ctrl.Client, sqlInstance *admin.DatabaseInstance, config *config.Config, logger *logrus.Logger) *UnleashService {
+type ISQLUsersService interface {
+	Get(project string, instance string, name string) *admin.UsersGetCall
+	Insert(project string, instance string, user *admin.User) *admin.UsersInsertCall
+	Delete(project string, instance string) *admin.UsersDeleteCall
+}
+
+type UnleashService struct {
+	sqlDatabasesClient ISQLDatabasesService
+	sqlUsersClient     ISQLUsersService
+	kubeClient         ctrl.Client
+	config             *config.Config
+	logger             *logrus.Logger
+}
+
+func NewUnleashService(sqlDatabasesClient ISQLDatabasesService, sqlUsersClient ISQLUsersService, kubeClient ctrl.Client, config *config.Config, logger *logrus.Logger) *UnleashService {
 	return &UnleashService{
-		googleClient: googleClient,
-		sqlInstance:  sqlInstance,
-		kubeClient:   kubeClient,
-		config:       config,
-		logger:       logger,
+		sqlDatabasesClient: sqlDatabasesClient,
+		sqlUsersClient:     sqlUsersClient,
+		kubeClient:         kubeClient,
+		config:             config,
+		logger:             logger,
 	}
 }
 
@@ -83,9 +95,9 @@ func (s *UnleashService) Get(ctx context.Context, name string) (*UnleashInstance
 }
 
 func (s *UnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	database, dbErr := createDatabase(ctx, s.googleClient, s.sqlInstance, name)
-	databaseUser, dbUserErr := createDatabaseUser(ctx, s.googleClient, s.sqlInstance, name)
-	secretErr := createDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, s.sqlInstance, database, databaseUser)
+	database, dbErr := createDatabase(ctx, s.sqlDatabasesClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+	databaseUser, dbUserErr := createDatabaseUser(ctx, s.sqlUsersClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+	secretErr := createDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, s.config.Unleash.SQLInstanceID, s.config.Unleash.SQLInstanceAddress, s.config.Google.ProjectID, database, databaseUser)
 	fqdnError := createFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, database.Name)
 	serverError := createServer(ctx, s.kubeClient, s.config, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
@@ -109,8 +121,8 @@ func (s *UnleashService) Delete(ctx context.Context, name string) error {
 	serverErr := deleteServer(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
 	netPolErr := deleteFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
 	dbUserSecretErr := deleteDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
-	dbErr := deleteDatabase(ctx, s.googleClient, s.sqlInstance, name)
-	dbUserErr := deleteDatabaseUser(ctx, s.googleClient, s.sqlInstance, name)
+	dbErr := deleteDatabase(ctx, s.sqlDatabasesClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+	dbUserErr := deleteDatabaseUser(ctx, s.sqlUsersClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
 
 	return errors.Join(serverErr, netPolErr, dbUserSecretErr, dbUserErr, dbErr)
 }

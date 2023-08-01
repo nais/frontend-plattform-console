@@ -28,7 +28,7 @@ func int64Ref(i int64) *int64 {
 	return &intvar
 }
 
-func FQDNNetworkPolicySpec(name string, kubeNamespace string) fqdnV1alpha3.FQDNNetworkPolicy {
+func FQDNNetworkPolicyDefinition(name string, kubeNamespace string) fqdnV1alpha3.FQDNNetworkPolicy {
 	protocolTCP := corev1.ProtocolTCP
 
 	return fqdnV1alpha3.FQDNNetworkPolicy{
@@ -59,7 +59,7 @@ func FQDNNetworkPolicySpec(name string, kubeNamespace string) fqdnV1alpha3.FQDNN
 					},
 					To: []fqdnV1alpha3.FQDNNetworkPolicyPeer{
 						{
-							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com"},
+							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com"},
 						},
 					},
 				},
@@ -116,7 +116,7 @@ func UnleashVariables(server *unleashv1.Unleash) (name, customVersion, allowedTe
 	return
 }
 
-func UnleashSpec(
+func UnleashDefinition(
 	c *config.Config,
 	name,
 	customVersion,

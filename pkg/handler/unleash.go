@@ -46,7 +46,7 @@ func (h *Handler) UnleashIndex(c *gin.Context) {
 }
 
 func (h *Handler) UnleashNew(c *gin.Context) {
-	obj := unleash.UnleashSpec(h.config, "my-unleash", "", "", "", "")
+	obj := unleash.UnleashDefinition(h.config, "my-unleash", "", "", "", "")
 	yamlString, err := utils.StructToYaml(obj)
 	if err != nil {
 		h.logger.WithError(err).Error("Error converting Unleash struct to yaml")
@@ -54,9 +54,10 @@ func (h *Handler) UnleashNew(c *gin.Context) {
 	}
 
 	c.HTML(200, "unleash-form.html", gin.H{
-		"title":  "New Unleash Instance",
-		"action": "create",
-		"yaml":   yamlString,
+		"title":           "New Unleash Instance",
+		"action":          "create",
+		"customImageName": unleash.UnleashCustomImageName,
+		"yaml":            yamlString,
 	})
 }
 
@@ -94,8 +95,16 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 	// instance.GetDatabaseUser()
 
 	c.HTML(200, "unleash-show.html", gin.H{
-		"title":        "Unleash: " + instance.Name,
-		"instance":     instance,
+		"title":              "Unleash: " + instance.Name,
+		"instance":           instance,
+		"googleProjectID":    h.config.Google.ProjectID,
+		"sqlInstanceID":      h.config.Unleash.SQLInstanceID,
+		"sqlInstanceAddress": h.config.Unleash.SQLInstanceAddress,
+		"sqlInstanceRegion":  h.config.Unleash.SQLInstanceRegion,
+		"sqlDatabaseName":    instance.Name,
+		"sqlDatabaseUser":    instance.Name,
+		"sqlDatabaseSecret":  instance.Name,
+
 		"instanceYaml": template.HTML(instanceYaml),
 	})
 }
