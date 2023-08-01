@@ -13,7 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
-	google.golang.org/api v0.133.0
+	google.golang.org/api v0.134.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.26.7
 	k8s.io/apimachinery v0.26.7
