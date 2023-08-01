@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"html/template"
 	"regexp"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/unleash"
@@ -79,9 +80,22 @@ func (h *Handler) UnleashInstanceMiddleware(c *gin.Context) {
 	c.Next()
 }
 
-func (h *Handler) UnleashInstanceShow(c *gin.Context) {
-	// ctx := c.Request.Context()
+func splitNoEmpty(s, sep string) []string {
+	if s == "" {
+		return []string{}
+	}
 
+	res := strings.Split(s, sep)
+	for i := 0; i < len(res); i++ {
+		if res[i] == "" {
+			res = append(res[:i], res[i+1:]...)
+		}
+	}
+
+	return res
+}
+
+func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 	instanceYaml, err := utils.StructToYaml(instance.ServerInstance)
 	if err != nil {
@@ -95,9 +109,9 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 		"title":                    "Unleash: " + instance.Name,
 		"instance":                 instance,
 		"unleashCustomVersion":     customVersion,
-		"unleashAllowedTeams":      allowedTeams,
-		"unleashAllowedNamespaces": allowedNamespaces,
-		"unleashAllowedClusters":   allowedClusters,
+		"unleashAllowedTeams":      splitNoEmpty(allowedTeams, ","),
+		"unleashAllowedNamespaces": splitNoEmpty(allowedNamespaces, ","),
+		"unleashAllowedClusters":   splitNoEmpty(allowedClusters, ","),
 		"googleProjectID":          h.config.Google.ProjectID,
 		"sqlInstanceID":            h.config.Unleash.SQLInstanceID,
 		"sqlInstanceAddress":       h.config.Unleash.SQLInstanceAddress,
