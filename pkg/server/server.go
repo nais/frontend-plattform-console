@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"fmt"
 	"os"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
@@ -21,26 +20,13 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func initGoogleClient(ctx context.Context) (*admin.Service, error) {
+func initGoogleClients(ctx context.Context) (*admin.InstancesService, *admin.DatabasesService, *admin.UsersService, error) {
 	googleClient, err := admin.NewService(ctx)
 	if err != nil {
-		return nil, err
+		return nil, nil, nil, err
 	}
 
-	return googleClient, nil
-}
-
-func initUnleashSQLInstance(ctx context.Context, client *admin.Service, config *config.Config) (*admin.DatabaseInstance, error) {
-	instance, err := client.Instances.Get(config.Google.ProjectID, config.Unleash.SQLInstanceID).Do()
-	if err != nil {
-		return nil, err
-	}
-
-	if instance.State != "RUNNABLE" {
-		return instance, fmt.Errorf("instance state is not runnable")
-	}
-
-	return instance, nil
+	return googleClient.Instances, googleClient.Databases, googleClient.Users, nil
 }
 
 func initKubenetesClient() (ctrl.Client, error) {
@@ -108,12 +94,14 @@ func setupRouter(config *config.Config, logger *logrus.Logger, unleashService un
 	{
 		unleash.GET("/", h.UnleashIndex)
 		unleash.GET("/new", h.UnleashNew)
-		unleash.POST("/new", h.UnleashNewPost)
+		unleash.POST("/new", h.UnleashInstancePost)
 
 		unleashInstance := unleash.Group("/:id")
 		unleashInstance.Use(h.UnleashInstanceMiddleware)
 		{
 			unleashInstance.GET("/", h.UnleashInstanceShow)
+			unleashInstance.GET("/edit", h.UnleashInstanceEdit)
+			unleashInstance.POST("/edit", h.UnleashInstancePost)
 			unleashInstance.GET("/delete", h.UnleashInstanceDelete)
 			unleashInstance.POST("/delete", h.UnleashInstanceDeletePost)
 		}
@@ -130,17 +118,12 @@ func Run(config *config.Config) {
 		logger.Fatal(err)
 	}
 
-	googleClient, err := initGoogleClient(context.Background())
+	_, sqlDatabasesClient, sqlUsersClient, err := initGoogleClients(context.Background())
 	if err != nil {
 		logger.Fatal(err)
 	}
 
-	unleashInstance, err := initUnleashSQLInstance(context.Background(), googleClient, config)
-	if err != nil {
-		logger.Fatal(err)
-	}
-
-	unleashService := unleash.NewUnleashService(googleClient, kubeClient, unleashInstance, config, logger)
+	unleashService := unleash.NewUnleashService(sqlDatabasesClient, sqlUsersClient, kubeClient, config, logger)
 
 	router := setupRouter(config, logger, unleashService)
 

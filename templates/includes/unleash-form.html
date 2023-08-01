@@ -7,26 +7,79 @@
   {{ if eq .action "create" }}
   <div class="active section">New Unleash Instance</div>
   {{ else }}
-  <a class="section" href="/unleash/{{ .instance.TeamName }}">{{ .instance.TeamName }}</a>
+  <a class="section" href="/unleash/{{ .name }}">{{ .name }}</a>
   <div class="divider"> / </div>
-  {{ if eq .action "update" }}
   <div class="active section">Edit</div>
-  {{ else if eq .action "delete" }}
-  <div class="active section">Delete</div>
-  {{ end }}
   {{ end }}
 </div>
 
 <h3 class="ui header">Instance Config</h3>
 
 <form class="ui form{{ if .error }} error{{ end }}" method="POST">
-  <div class="field{{ if .error }} error{{ end }}">
-    <label>Team Name</label>
-    <input type="text" name="team-name" placeholder="Team Name">
-    {{ if eq .action "delete" }}
-    <p>Type the name of the Unleash instance in order to confirm.</p>
-    {{ end }}
+  <div class="field">
+    <div class="two fields">
+      <div class="name field{{ if .nameError}} error{{ end }}">
+        <label>Instance Name</label>
+        <input name="name" type="text"{{ if eq .action "edit" }} disabled{{ end }} value="{{ .name }}">
+      </div>
+      <div class="version field{{ if .customImageVersionError }} error{{ end }}">
+        <label>Custom Version</label>
+        <div class="ui labeled input">
+          <div class="ui label">{{ .customImageName }}:</div>
+          <input name="custom-image-version" type="text" value="{{ .customImageVersion }}" placeholder="1.2.3">
+        </div>
+      </div>
+    </div>
   </div>
+
+  <div class="teams field{{ if .allowedTeamsError }} error{{ end }}">
+    <label>Allowed Teams</label>
+    <div class="ui fluid multiple search selection dropdown">
+      <input name="allowed-teams" type="hidden" value="{{ .allowedTeams }}">
+      <i class="dropdown icon"></i>
+      <div class="default text">Teams</div>
+      <div class="menu"></div>
+    </div>
+    <p>Teams that are allowed to access the Unleash server.</p>
+  </div>
+
+  <div class="namespaces field{{ if .allowedNamespacesError }} error{{ end }}">
+    <label>Allowed Namespaces</label>
+    <div class="ui fluid multiple search selection dropdown">
+      <input name="allowed-namespaces" type="hidden" value="{{ .allowedNamespaces }}">
+      <i class="dropdown icon"></i>
+      <div class="default text">Namespaces</div>
+      <div class="menu"></div>
+    </div>
+    <p>Namespaces that are allowed to access the Unleash server.</p>
+  </div>
+
+  <div class="clusters field{{ if .allowedClistersError }} error{{ end }}">
+    <label>Allowed Clusters</label>
+    <div class="ui fluid multiple search selection dropdown">
+      <input name="allowed-clusters" type="hidden" value="{{ .allowedClusters }}">
+      <i class="dropdown icon"></i>
+      <div class="default text">Clusters</div>
+      <div class="menu">
+      <div class="item" data-value="prod-gcp">prod-gcp</div>
+      <div class="item" data-value="dev-gcp">dev-gcp</div>
+      <div class="item" data-value="prod-fss">prod-fss</div>
+      <div class="item" data-value="dev-fss">dev-fss</div>
+      </div>
+    </div>
+    <p>Clusters that are allowed to access this Unleash server.</p>
+  </div>
+
+  <script>
+    window.onload = function() {
+      $('.ui.dropdown')
+        .dropdown({
+          allowAdditions: true
+        })
+      ;
+    }
+  </script>
+
   {{ if .error }}
   <div class="ui error message">
     <div class="header">Validation failed</div>
@@ -35,10 +88,8 @@
   {{ end }}
   {{ if eq .action "create" }}
     <button class="ui button" type="submit">Submit</button>
-  {{ else if eq .action "update" }}
+  {{ else if eq .action "edit" }}
     <button class="ui button" type="submit">Update</button>
-  {{ else if eq .action "delete" }}
-    <button class="ui danger button" type="submit">Delete</button>
   {{ end }}
 </form>
 

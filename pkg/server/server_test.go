@@ -15,10 +15,12 @@ import (
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 type MockUnleashService struct {
+	c         *config.Config
 	Instances []*unleash.UnleashInstance
 }
 
@@ -26,9 +28,9 @@ func (s *MockUnleashService) List(ctx context.Context) ([]*unleash.UnleashInstan
 	return s.Instances, nil
 }
 
-func (s *MockUnleashService) Get(ctx context.Context, teamName string) (*unleash.UnleashInstance, error) {
+func (s *MockUnleashService) Get(ctx context.Context, name string) (*unleash.UnleashInstance, error) {
 	for _, instance := range s.Instances {
-		if instance.TeamName == teamName {
+		if instance.Name == name {
 			return instance, nil
 		}
 	}
@@ -36,19 +38,34 @@ func (s *MockUnleashService) Get(ctx context.Context, teamName string) (*unleash
 	return nil, fmt.Errorf("instance not found")
 }
 
-func (s *MockUnleashService) Create(ctx context.Context, teamName string) error {
+func (s *MockUnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	spec := unleash.UnleashDefinition(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+
 	s.Instances = append(s.Instances, &unleash.UnleashInstance{
-		TeamName:       teamName,
+		Name:           name,
 		CreatedAt:      metav1.Now(),
-		ServerInstance: &unleashv1.Unleash{},
+		ServerInstance: &spec,
 	})
 
 	return nil
 }
 
-func (s *MockUnleashService) Delete(ctx context.Context, teamName string) error {
+func (s *MockUnleashService) Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	spec := unleash.UnleashDefinition(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+
+	for _, instance := range s.Instances {
+		if instance.Name == name {
+			instance.ServerInstance = &spec
+			return nil
+		}
+	}
+
+	return fmt.Errorf("instance not found")
+}
+
+func (s *MockUnleashService) Delete(ctx context.Context, name string) error {
 	for i, instance := range s.Instances {
-		if instance.TeamName == teamName {
+		if instance.Name == name {
 			s.Instances = append(s.Instances[:i], s.Instances[i+1:]...)
 			return nil
 		}
@@ -60,7 +77,7 @@ func (s *MockUnleashService) Delete(ctx context.Context, teamName string) error 
 func TestHealthzRoute(t *testing.T) {
 	config := &config.Config{}
 	logger := logrus.New()
-	service := &MockUnleashService{}
+	service := &MockUnleashService{c: config}
 
 	router := setupRouter(config, logger, service)
 	w := httptest.NewRecorder()
@@ -76,7 +93,7 @@ func TestMetricsRoute(t *testing.T) {
 
 	config := &config.Config{}
 	logger := logrus.New()
-	service := &MockUnleashService{}
+	service := &MockUnleashService{c: config}
 
 	router := setupRouter(config, logger, service)
 	w := httptest.NewRecorder()
@@ -95,14 +112,15 @@ func newUnleashRoute() (c *config.Config, service *MockUnleashService, router *g
 	}
 	logger := logrus.New()
 	service = &MockUnleashService{
+		c: c,
 		Instances: []*unleash.UnleashInstance{
 			{
-				TeamName:       "team1",
+				Name:           "team1",
 				CreatedAt:      metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 				ServerInstance: &unleashv1.Unleash{},
 			},
 			{
-				TeamName:       "team2",
+				Name:           "team2",
 				CreatedAt:      metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 				ServerInstance: &unleashv1.Unleash{},
 			},
@@ -144,16 +162,31 @@ func TestUnleashNew(t *testing.T) {
 	req, _ = http.NewRequest("POST", "/unleash/new", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 400, w.Code)
-	assert.Contains(t, w.Body.String(), "<p>Team name can not be empty</p>")
+	assert.Contains(t, w.Body.String(), "<form class=\"ui form error\" method=\"POST\">")
+	assert.Contains(t, w.Body.String(), "<div class=\"name field error\">")
+	assert.Contains(t, w.Body.String(), "<p>Input validation failed, see errors in above fields</p>")
 
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("team-name=my-team"))
+	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("name=my-name"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 302, w.Code)
-	assert.Equal(t, "/unleash", w.Header().Get("Location"))
+	assert.Equal(t, "/unleash/my-name", w.Header().Get("Location"))
 	assert.Equal(t, 3, len(service.Instances))
-	assert.Equal(t, "my-team", service.Instances[2].TeamName)
+	assert.Equal(t, "my-name", service.Instances[2].Name)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("name=my-name&custom-image-version=1.2.3&allowed-teams=team1,team2&allowed-namespaces=ns1,ns2&allowed-clusters=cluster1,cluster2"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 302, w.Code)
+	assert.Equal(t, "/unleash/my-name", w.Header().Get("Location"))
+	assert.Equal(t, 4, len(service.Instances))
+	assert.Equal(t, "my-name", service.Instances[3].Name)
+	assert.Equal(t, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3", service.Instances[3].ServerInstance.Spec.CustomImage)
+	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_TEAMS", Value: "team1,team2"})
+	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_NAMESPACES", Value: "ns1,ns2"})
+	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_CLUSTERS", Value: "cluster1,cluster2"})
 }
 
 func TestUnleashGet(t *testing.T) {
@@ -173,46 +206,46 @@ func TestUnleashGet(t *testing.T) {
 }
 
 func TestUnleashDelete(t *testing.T) {
-	config := &config.Config{
+	c := &config.Config{
 		Server: config.ServerConfig{
 			TemplatesDir: "../../templates",
 		},
 	}
 	logger := logrus.New()
 	service := &MockUnleashService{
+		c: c,
 		Instances: []*unleash.UnleashInstance{
 			{
-				TeamName:  "team1",
+				Name:      "team1",
 				CreatedAt: metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 			{
-				TeamName:  "team2",
+				Name:      "team2",
 				CreatedAt: metav1.NewTime(time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)),
 			},
 		},
 	}
 
-	router := setupRouter(config, logger, service)
+	router := setupRouter(c, logger, service)
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/unleash/new", nil)
+	req, _ := http.NewRequest("GET", "/unleash/team1/delete", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
-	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">New Unleash Instance</h1>")
+	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">Delete Unleash: team1</h1>")
 	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
 
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("POST", "/unleash/new", nil)
+	req, _ = http.NewRequest("POST", "/unleash/team1/delete", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 400, w.Code)
-	assert.Contains(t, w.Body.String(), "<p>Team name can not be empty</p>")
+	assert.Contains(t, w.Body.String(), "Instance name does not match")
 
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("team-name=my-team"))
+	req, _ = http.NewRequest("POST", "/unleash/team1/delete", strings.NewReader("name=team1"))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 302, w.Code)
 	assert.Equal(t, "/unleash", w.Header().Get("Location"))
-	assert.Equal(t, 3, len(service.Instances))
-	assert.Equal(t, "my-team", service.Instances[2].TeamName)
+	assert.Equal(t, 1, len(service.Instances))
 }

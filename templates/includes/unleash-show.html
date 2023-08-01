@@ -9,22 +9,72 @@
       <div class="divider"> / </div>
       <a class="section" href="/unleash/">Unleash</a>
       <div class="divider"> / </div>
-      <div class="active section">{{ .instance.TeamName }}</div>
+      <div class="active section">{{ .instance.Name }}</div>
     </div>
   </div>
   <div class="right aligned eight wide column">
-<div class="mini ui buttons">
-  <a class="ui button disabled"><i class="pencil icon"></i></a>
-  <a class="ui button" href="./delete"><i class="trash icon"></i></a>
-</div>
+    <div class="mini ui buttons">
+      <a class="ui button" href="./edit"><i class="pencil icon"></i></a>
+      <a class="ui button" href="./delete"><i class="trash icon"></i></a>
+    </div>
   </div>
 </div>
 
 <h5 class="ui top attached header">unleash.yaml</h5>
 <div class="ui attached segment" style="padding: 0;">
-  <pre style="margin: 0; overflow: scroll; max-height: 250px;"><code class="language-yaml">{{ .instanceYaml }}</code></pre>
+  <pre
+    style="margin: 0; overflow: scroll; max-height: 250px;"><code class="language-yaml">{{ .instanceYaml }}</code></pre>
 </div>
 
+<h3 class="ui header">
+  <i class="user icon"></i>
+  <div class="content">
+    Access Control
+    <div class="sub header">Access to Unleash</div>
+  </div>
+</h3>
+
+<div class="ui middle aligned divided list">
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashAllowedTeams }}
+      <a class="ui label">{{ .unleashAllowedTeams }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Empty
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Allowed Teams</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashAllowedNamespaces }}
+      <a class="ui label">{{ .unleashAllowedNamespaces }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Empty
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Allowed Namespaces</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashAllowedClusters }}
+      <a class="ui label">{{ .unleashAllowedClusters }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Empty
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Allowed Clusters</div>
+  </div>
+</div>
 <h3 class="ui header">
   <i class="settings icon"></i>
   <div class="content">
@@ -34,6 +84,21 @@
 </h3>
 
 <div class="ui middle aligned divided list">
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashCustomVersion }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> {{ .unleashCustomVersion }}</span>
+      </div>
+      {{ else }}
+      <div class="ui green label">
+        Latest
+      </div>
+      {{ end }}
+    </div>
+    <!-- <i class="large internet explorer middle aligned icon"></i>-->
+    <div class="content">Custom Version</div>
+  </div>
   <div class="item">
     <div class="right floated content">
       {{ if .instance.WebUrl }}
@@ -74,11 +139,16 @@
   <div class="item">
     <div class="right floated content">
       <div class="ui label">
-      {{ if .instance.DatabaseInstance }}
-        {{ .instance.DatabaseInstance.Name }}
-      {{ else }}
-        <i class="exclamation triangle icon"></i> Not Found
-      {{ end }}
+        {{ .googleProjectID }}
+      </div>
+    </div>
+    <!--<i class="large database middle aligned icon"></i>-->
+    <div class="content">Google Cloud Project</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">
+        {{ .sqlInstanceID }}
       </div>
     </div>
     <!--<i class="large database middle aligned icon"></i>-->
@@ -87,11 +157,16 @@
   <div class="item">
     <div class="right floated content">
       <div class="ui label">
-      {{ if .instance.Database }}
-        {{ .instance.Database.Name }}
-      {{ else }}
-        <i class="exclamation triangle icon"></i> Not Found
-      {{ end }}
+        {{ .sqlInstanceAddress }}
+      </div>
+    </div>
+    <!--<i class="large database middle aligned icon"></i>-->
+    <div class="content">Database Address</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      <div class="ui label">
+        {{ .sqlDatabaseName }}
       </div>
     </div>
     <!--<i class="large database middle aligned icon"></i>-->
@@ -100,11 +175,7 @@
   <div class="item">
     <div class="right floated content">
       <div class="ui label">
-      {{ if .instance.DatabaseUser }}
-        {{ .instance.DatabaseUser.Name }}
-      {{ else }}
-        <i class="exclamation triangle icon"></i> Not Found
-      {{ end }}
+        {{ .sqlDatabaseUser }}
       </div>
     </div>
     <!--<i class="large user middle aligned icon"></i>-->
@@ -113,11 +184,7 @@
   <div class="item">
     <div class="right floated content">
       <div class="ui label">
-      {{ if .instance.DatabaseSecret }}
-        {{ .instance.DatabaseSecret.Name }}
-      {{ else }}
-        <i class="exclamation triangle icon"></i> Not Found
-      {{ end }}
+        {{ .sqlDatabaseSecret }}
       </div>
     </div>
     <!--<i class="large user middle aligned icon"></i>-->

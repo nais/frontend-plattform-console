@@ -54,25 +54,39 @@ spec:
               value: {{ .Values.backend.google.projectNumber | quote }}
             - name: BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID
               value: {{ .Values.backend.google.iapBackendServiceId | quote }}
+            # Teams
+            - name: BIFROST_TEAMS_API_URL
+              value: {{ .Values.backend.teams.apiUrl | quote }}
+            - name: BIFROST_TEAMS_API_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "bifrost.fullname" . }}-backend
+                  key: {{ .Values.backend.teams.apiTokenSecretKey }}
             # Unleash
             - name: BIFROST_UNLEASH_SQL_INSTANCE_ID
-              value: {{ .Values.backend.unleash.sqlInstanceId | quote }}
+              value: {{ .Values.backend.unleash.sqlInstanceId | required ".unleash.sqlInstanceId is required" | quote }}
             - name: BIFROST_UNLEASH_SQL_INSTANCE_ADDRESS
-              value: {{ .Values.backend.unleash.sqlInstanceAddress | quote }}
+              value: {{ .Values.backend.unleash.sqlInstanceAddress | required ".unleash.sqlInstanceAddress is required" | quote }}
             - name: BIFROST_UNLEASH_SQL_INSTANCE_REGION
-              value: {{ .Values.backend.unleash.sqlInstanceRegion | quote }}
+              value: {{ .Values.backend.unleash.sqlInstanceRegion | required ".unleash.sqlInstanceRegion is required" | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_NAMESPACE
-              value: {{ .Values.backend.unleash.instanceNamespace | quote }}
+              value: {{ .Values.backend.unleash.instanceNamespace | required ".unleash.instanceNamespace is required" | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_SERVICEACCOUNT
-              value: {{ .Values.backend.unleash.kubernetesServiceAccountName | quote }}
+              value: {{ .Values.backend.unleash.kubernetesServiceAccountName | required ".unleash.kubernetesServiceAccountName is required" | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_CLASS
-              value: {{ .Values.backend.unleash.webIngressClass | quote }}
+              value: {{ .Values.backend.unleash.webIngressClass | required ".unleash.webIngressClass is required" | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_HOST
-              value: {{ .Values.backend.unleash.webIngressHost | quote }}
+              value: {{ .Values.backend.unleash.webIngressHost | required ".unleash.webIngressHost is required" | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_API_INGRESS_CLASS
-              value: {{ .Values.backend.unleash.apiIngressClass | quote }}
+              value: {{ .Values.backend.unleash.apiIngressClass | required ".unleash.apiIngressClass is required" | quote }}
             - name: BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST
-              value: {{ .Values.backend.unleash.apiIngressHost | quote }}
+              value: {{ .Values.backend.unleash.apiIngressHost | required ".unleash.apiIngressHost is required" | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_TEAMS_API_URL
+              value: {{ .Values.backend.unleash.teamsApiUrl | required ".unleash.teamsApiUrl is required" | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_TEAMS_API_SECRET_NAME
+              value: {{ .Values.backend.unleash.teamsApiTokenSecretName | required ".unleash.teamsApiTokenSecretName is required" | quote }}
+            - name: BIFROST_UNLEASH_INSTANCE_TEAMS_API_TOKEN_SECRET_KEY
+              value: {{ .Values.backend.unleash.teamsApiTokenSecretKey | required ".unleash.teamsApiTokenSecretKey is required" | quote }}
           ports:
             - name: http
               containerPort: 8080

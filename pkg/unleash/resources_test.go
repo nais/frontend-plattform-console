@@ -7,19 +7,69 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/bifrost/pkg/config"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
+	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
 
-func TestNewFQDNNetworkPolicySpec(t *testing.T) {
+func TestVersionFromImage(t *testing.T) {
+	image := "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3"
+	expectedVersion := "1.2.3"
+
+	version := versionFromImage(image)
+
+	assert.Equal(t, expectedVersion, version)
+}
+
+func TestGetServerEnvVar(t *testing.T) {
+	server := &unleashv1.Unleash{
+		Spec: unleashv1.UnleashSpec{
+			ExtraEnvVars: []corev1.EnvVar{
+				{
+					Name:  "TEAMS_ALLOWED_TEAMS",
+					Value: "team-a,team-b",
+				},
+				{
+					Name:  "TEAMS_ALLOWED_NAMESPACES",
+					Value: "namespace-a,namespace-b",
+				},
+			},
+		},
+	}
+
+	assert.Equal(t, "team-a,team-b", getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", "default-value"))
+	assert.Equal(t, "default-value", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value"))
+}
+
+func TestCustomImageForVersion(t *testing.T) {
+	customVersion := "1.2.3"
+	expectedImage := "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3"
+
+	assert.Equal(t, expectedImage, customImageForVersion(customVersion))
+}
+
+func TestUnleashVariables(t *testing.T) {
+	c := config.Config{}
+
+	unleashInstance := UnleashDefinition(&c, "my-team", "1.2.3", "team-a,team-b", "namespace-a,namespace-b", "cluster-a,cluster-b")
+	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := UnleashVariables(&unleashInstance)
+
+	assert.Equal(t, "my-team", name)
+	assert.Equal(t, "1.2.3", customVersion)
+	assert.Equal(t, "team-a,team-b", allowedTeams)
+	assert.Equal(t, "namespace-a,namespace-b", allowedNamespaces)
+	assert.Equal(t, "cluster-a,cluster-b", allowedClusters)
+}
+
+func TestFQDNNetworkPolicySpec(t *testing.T) {
 	teamName := "my-team"
-	kubeNamespace := "my-namespace"
+	kubeNamespace := "my-teamspace"
 
 	protocolTCP := corev1.ProtocolTCP
 
-	a := newFQDNNetworkPolicySpec(teamName, kubeNamespace)
+	a := FQDNNetworkPolicyDefinition(teamName, kubeNamespace)
 	b := fqdnV1alpha3.FQDNNetworkPolicy{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "FQDNNetworkPolicy",
@@ -48,7 +98,7 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 					},
 					To: []fqdnV1alpha3.FQDNNetworkPolicyPeer{
 						{
-							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com"},
+							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com"},
 						},
 					},
 				},
@@ -78,7 +128,7 @@ func TestNewFQDNNetworkPolicySpec(t *testing.T) {
 	}
 }
 
-func TestNewUnleashSpec(t *testing.T) {
+func TestUnleashSpec(t *testing.T) {
 	c := config.Config{
 		Google: config.GoogleConfig{
 			ProjectID:           "my-project",
@@ -95,90 +145,176 @@ func TestNewUnleashSpec(t *testing.T) {
 			InstanceWebIngressClass: "unleash-web-ingress-class",
 			InstanceAPIIngressHost:  "unleash-api.example.com",
 			InstanceAPIIngressClass: "unleash-api-ingress-class",
+			TeamsApiURL:             "teams.example.com",
+			TeamsApiSecretName:      "my-teams-api-secret",
+			TeamsApiSecretTokenKey:  "token",
 		},
 		CloudConnectorProxy: "repo/connector:latest",
 	}
-	teamName := "my-team"
 
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
 
-	a := NewUnleashSpec(&c, teamName)
-	b := unleashv1.Unleash{
-		TypeMeta: metav1.TypeMeta{
-			Kind:       "Unleash",
-			APIVersion: "unleash.nais.io/v1",
-		},
-		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-team",
-			Namespace: "unleash-ns",
-		},
-		Spec: unleashv1.UnleashSpec{
-			Size: 1,
-			Database: unleashv1.UnleashDatabaseConfig{
-				Host:                  "localhost",
-				Port:                  "5432",
-				SSL:                   "false",
-				SecretName:            "my-team",
-				SecretUserKey:         "POSTGRES_USER",
-				SecretPassKey:         "POSTGRES_PASSWORD",
-				SecretDatabaseNameKey: "POSTGRES_DB",
-			},
-			WebIngress: unleashv1.UnleashIngressConfig{
-				Enabled: true,
-				Host:    "my-team-unleash-web.example.com",
-				Path:    "/",
-				Class:   "unleash-web-ingress-class",
-			},
-			ApiIngress: unleashv1.UnleashIngressConfig{
-				Enabled: true,
-				Host:    "my-team-unleash-api.example.com",
-				Path:    "/",
-				Class:   "unleash-api-ingress-class",
-			},
-			NetworkPolicy: unleashv1.UnleashNetworkPolicyConfig{
-				Enabled:  true,
-				AllowDNS: true,
-				ExtraEgressRules: []networkingv1.NetworkPolicyEgressRule{{
-					Ports: []networkingv1.NetworkPolicyPort{{
-						Protocol: &cloudSqlProto,
-						Port:     &cloudSqlPort,
-					}},
-					To: []networkingv1.NetworkPolicyPeer{{
-						IPBlock: &networkingv1.IPBlock{
-							CIDR: "1.2.3.4/32",
-						},
-					}},
-				}},
-			},
-			ExtraEnvVars: []corev1.EnvVar{{
-				Name:  "GOOGLE_IAP_AUDIENCE",
-				Value: "/projects/1234/global/backendServices/5678",
-			}},
-			ExtraContainers: []corev1.Container{{
-				Name:  "sql-proxy",
-				Image: "repo/connector:latest",
-				Args: []string{
-					"--structured-logs",
-					"--port=5432",
-					"my-project:my-region:my-instance",
-				},
-				SecurityContext: &corev1.SecurityContext{
-					Capabilities: &corev1.Capabilities{
-						Drop: []corev1.Capability{"ALL"},
-					},
-					Privileged:               boolRef(false),
-					RunAsUser:                int64Ref(65532),
-					RunAsNonRoot:             boolRef(true),
-					AllowPrivilegeEscalation: boolRef(false),
-				},
-			}},
-			ExistingServiceAccountName: "unleash-sa",
-			Resources:                  corev1.ResourceRequirements{},
-		},
-	}
+	teamsApiProto := corev1.ProtocolTCP
+	teamsApiPort := intstr.FromInt(3000)
 
-	if !cmp.Equal(a, b) {
-		t.Errorf(cmp.Diff(a, b))
-	}
+	t.Run("default values", func(t *testing.T) {
+		a := UnleashDefinition(&c, "my-team", "", "", "", "")
+		b := unleashv1.Unleash{
+			TypeMeta: metav1.TypeMeta{
+				Kind:       "Unleash",
+				APIVersion: "unleash.nais.io/v1",
+			},
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      "my-team",
+				Namespace: "unleash-ns",
+			},
+			Spec: unleashv1.UnleashSpec{
+				Size: 1,
+				Database: unleashv1.UnleashDatabaseConfig{
+					Host:                  "localhost",
+					Port:                  "5432",
+					SSL:                   "false",
+					SecretName:            "my-team",
+					SecretUserKey:         "POSTGRES_USER",
+					SecretPassKey:         "POSTGRES_PASSWORD",
+					SecretDatabaseNameKey: "POSTGRES_DB",
+				},
+				WebIngress: unleashv1.UnleashIngressConfig{
+					Enabled: true,
+					Host:    "my-team-unleash-web.example.com",
+					Path:    "/",
+					Class:   "unleash-web-ingress-class",
+				},
+				ApiIngress: unleashv1.UnleashIngressConfig{
+					Enabled: true,
+					Host:    "my-team-unleash-api.example.com",
+					Path:    "/",
+					Class:   "unleash-api-ingress-class",
+				},
+				NetworkPolicy: unleashv1.UnleashNetworkPolicyConfig{
+					Enabled:  true,
+					AllowDNS: true,
+					ExtraEgressRules: []networkingv1.NetworkPolicyEgressRule{{
+						Ports: []networkingv1.NetworkPolicyPort{{
+							Protocol: &cloudSqlProto,
+							Port:     &cloudSqlPort,
+						}},
+						To: []networkingv1.NetworkPolicyPeer{{
+							IPBlock: &networkingv1.IPBlock{
+								CIDR: "1.2.3.4/32",
+							},
+						}},
+					}, {
+						Ports: []networkingv1.NetworkPolicyPort{{
+							Protocol: &teamsApiProto,
+							Port:     &teamsApiPort,
+						}},
+						To: []networkingv1.NetworkPolicyPeer{{
+							NamespaceSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"kubernetes.io/metadata.name=nais-system": "nais-system",
+								},
+							},
+							PodSelector: &metav1.LabelSelector{
+								MatchLabels: map[string]string{
+									"app.kubernetes.io/name": "teams-backend",
+								},
+							},
+						}},
+					}},
+				},
+				ExtraEnvVars: []corev1.EnvVar{{
+					Name:  "GOOGLE_IAP_AUDIENCE",
+					Value: "/projects/1234/global/backendServices/5678",
+				}, {
+					Name:  "TEAMS_API_URL",
+					Value: "teams.example.com",
+				}, {
+					Name: "TEAMS_API_TOKEN",
+					ValueFrom: &corev1.EnvVarSource{
+						SecretKeyRef: &corev1.SecretKeySelector{
+							LocalObjectReference: corev1.LocalObjectReference{
+								Name: "my-teams-api-secret",
+							},
+							Key: "token",
+						},
+					},
+				}, {
+					Name:  "TEAMS_ALLOWED_TEAMS",
+					Value: "",
+				}, {
+					Name:  "TEAMS_ALLOWED_NAMESPACES",
+					Value: "",
+				}, {
+					Name:  "TEAMS_ALLOWED_CLUSTERS",
+					Value: "",
+				}, {
+					Name:  "LOG_LEVEL",
+					Value: "warn",
+				}},
+				ExtraContainers: []corev1.Container{{
+					Name:  "sql-proxy",
+					Image: "repo/connector:latest",
+					Args: []string{
+						"--structured-logs",
+						"--port=5432",
+						"my-project:my-region:my-instance",
+					},
+					SecurityContext: &corev1.SecurityContext{
+						Capabilities: &corev1.Capabilities{
+							Drop: []corev1.Capability{"ALL"},
+						},
+						Privileged:               boolRef(false),
+						RunAsUser:                int64Ref(65532),
+						RunAsNonRoot:             boolRef(true),
+						AllowPrivilegeEscalation: boolRef(false),
+					},
+				}},
+				ExistingServiceAccountName: "unleash-sa",
+				Resources:                  corev1.ResourceRequirements{},
+			},
+		}
+
+		assert.Equal(t, a.Spec, b.Spec)
+	})
+
+	t.Run("custom single values", func(t *testing.T) {
+		a := UnleashDefinition(&c, "my-team", "9.9.9", "my-team", "my-team-ns", "my-cluster")
+
+		assert.Equal(t, a.Spec.CustomImage, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:9.9.9")
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "TEAMS_ALLOWED_TEAMS",
+			Value: "my-team",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "TEAMS_ALLOWED_NAMESPACES",
+			Value: "my-team-ns",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "TEAMS_ALLOWED_CLUSTERS",
+			Value: "my-cluster",
+		})
+	})
+
+	t.Run("custom multiple values", func(t *testing.T) {
+		a := UnleashDefinition(&c, "my-team", "9.9.9", "team-a,team-b,team-c", "ns-a,ns-b,ns-c", "cluster-a,cluster-b,cluster-c")
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "TEAMS_ALLOWED_TEAMS",
+			Value: "team-a,team-b,team-c",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "TEAMS_ALLOWED_NAMESPACES",
+			Value: "ns-a,ns-b,ns-c",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "TEAMS_ALLOWED_CLUSTERS",
+			Value: "cluster-a,cluster-b,cluster-c",
+		})
+	})
 }

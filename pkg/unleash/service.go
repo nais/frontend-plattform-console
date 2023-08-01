@@ -14,26 +14,39 @@ import (
 
 type IUnleashService interface {
 	List(ctx context.Context) ([]*UnleashInstance, error)
-	Get(ctx context.Context, teamName string) (*UnleashInstance, error)
-	Create(ctx context.Context, teamName string) error
-	Delete(ctx context.Context, teamName string) error
+	Get(ctx context.Context, name string) (*UnleashInstance, error)
+	Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error
+	Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error
+	Delete(ctx context.Context, name string) error
+}
+
+type ISQLDatabasesService interface {
+	Get(project string, instance string, database string) *admin.DatabasesGetCall
+	Insert(project string, instance string, database *admin.Database) *admin.DatabasesInsertCall
+	Delete(project string, instance string, database string) *admin.DatabasesDeleteCall
+}
+
+type ISQLUsersService interface {
+	Get(project string, instance string, name string) *admin.UsersGetCall
+	Insert(project string, instance string, user *admin.User) *admin.UsersInsertCall
+	Delete(project string, instance string) *admin.UsersDeleteCall
 }
 
 type UnleashService struct {
-	googleClient *admin.Service
-	sqlInstance  *admin.DatabaseInstance
-	kubeClient   ctrl.Client
-	config       *config.Config
-	logger       *logrus.Logger
+	sqlDatabasesClient ISQLDatabasesService
+	sqlUsersClient     ISQLUsersService
+	kubeClient         ctrl.Client
+	config             *config.Config
+	logger             *logrus.Logger
 }
 
-func NewUnleashService(googleClient *admin.Service, kubeClient ctrl.Client, sqlInstance *admin.DatabaseInstance, config *config.Config, logger *logrus.Logger) *UnleashService {
+func NewUnleashService(sqlDatabasesClient ISQLDatabasesService, sqlUsersClient ISQLUsersService, kubeClient ctrl.Client, config *config.Config, logger *logrus.Logger) *UnleashService {
 	return &UnleashService{
-		googleClient: googleClient,
-		sqlInstance:  sqlInstance,
-		kubeClient:   kubeClient,
-		config:       config,
-		logger:       logger,
+		sqlDatabasesClient: sqlDatabasesClient,
+		sqlUsersClient:     sqlUsersClient,
+		kubeClient:         kubeClient,
+		config:             config,
+		logger:             logger,
 	}
 }
 
@@ -62,14 +75,14 @@ func (s *UnleashService) List(ctx context.Context) ([]*UnleashInstance, error) {
 	return instanceList, nil
 }
 
-func (s *UnleashService) Get(ctx context.Context, teamName string) (*UnleashInstance, error) {
+func (s *UnleashService) Get(ctx context.Context, name string) (*UnleashInstance, error) {
 	serverInstance := &unleashv1.Unleash{
 		TypeMeta: metav1.TypeMeta{
 			Kind:       "Unleash",
 			APIVersion: "unleasherator.nais.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      teamName,
+			Name:      name,
 			Namespace: s.config.Unleash.InstanceNamespace,
 		},
 	}
@@ -81,25 +94,35 @@ func (s *UnleashService) Get(ctx context.Context, teamName string) (*UnleashInst
 	return NewUnleashInstance(serverInstance), nil
 }
 
-func (s *UnleashService) Create(ctx context.Context, teamName string) error {
-	database, dbErr := createDatabase(ctx, s.googleClient, s.sqlInstance, teamName)
-	databaseUser, dbUserErr := createDatabaseUser(ctx, s.googleClient, s.sqlInstance, teamName)
-	secretErr := createDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, s.sqlInstance, database, databaseUser)
-	fqdnCreationError := createFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, database.Name)
-	createServerError := createServer(ctx, s.kubeClient, s.config, teamName)
+func (s *UnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	database, dbErr := createDatabase(ctx, s.sqlDatabasesClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+	databaseUser, dbUserErr := createDatabaseUser(ctx, s.sqlUsersClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+	secretErr := createDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, s.config.Unleash.SQLInstanceID, s.config.Unleash.SQLInstanceAddress, s.config.Google.ProjectID, database, databaseUser)
+	fqdnError := createFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, database.Name)
+	serverError := createServer(ctx, s.kubeClient, s.config, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
 
-	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnCreationError, createServerError); err != nil {
+	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnError, serverError); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (s *UnleashService) Delete(ctx context.Context, teamName string) error {
-	serverErr := deleteServer(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, teamName)
-	netPolErr := deleteFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, teamName)
-	dbUserSecretErr := deleteDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, teamName)
-	dbErr := deleteDatabase(ctx, s.googleClient, s.sqlInstance, teamName)
-	dbUserErr := deleteDatabaseUser(ctx, s.googleClient, s.sqlInstance, teamName)
+func (s *UnleashService) Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	fqdnError := updateFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
+	serverError := updateServer(ctx, s.kubeClient, s.config, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+
+	if err := errors.Join(fqdnError, serverError); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (s *UnleashService) Delete(ctx context.Context, name string) error {
+	serverErr := deleteServer(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
+	netPolErr := deleteFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
+	dbUserSecretErr := deleteDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
+	dbErr := deleteDatabase(ctx, s.sqlDatabasesClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+	dbUserErr := deleteDatabaseUser(ctx, s.sqlUsersClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
 
 	return errors.Join(serverErr, netPolErr, dbUserSecretErr, dbUserErr, dbErr)
 }

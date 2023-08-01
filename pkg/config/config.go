@@ -27,6 +27,11 @@ type GoogleConfig struct {
 	IAPBackendServiceID string `env:"BIFROST_GOOGLE_IAP_BACKEND_SERVICE_ID,required"`
 }
 
+type TeamsConfig struct {
+	TeamsApiURL   string `env:"BIFROST_TEAMS_API_URL,required"`
+	TeamsApiToken string `env:"BIFROST_TEAMS_API_TOKEN,required"`
+}
+
 type UnleashConfig struct {
 	InstanceNamespace       string `env:"BIFROST_UNLEASH_INSTANCE_NAMESPACE,required"`
 	InstanceServiceaccount  string `env:"BIFROST_UNLEASH_INSTANCE_SERVICEACCOUNT,required"`
@@ -37,11 +42,15 @@ type UnleashConfig struct {
 	InstanceWebIngressClass string `env:"BIFROST_UNLEASH_INSTANCE_WEB_INGRESS_CLASS,required"`
 	InstanceAPIIngressHost  string `env:"BIFROST_UNLEASH_INSTANCE_API_INGRESS_HOST,required"`
 	InstanceAPIIngressClass string `env:"BIFROST_UNLEASH_INSTANCE_API_INGRESS_CLASS,required"`
+	TeamsApiURL             string `env:"BIFROST_UNLEASH_INSTANCE_TEAMS_API_URL,required"`
+	TeamsApiSecretName      string `env:"BIFROST_UNLEASH_INSTANCE_TEAMS_API_SECRET_NAME,required"`
+	TeamsApiSecretTokenKey  string `env:"BIFROST_UNLEASH_INSTANCE_TEAMS_API_TOKEN_SECRET_KEY,required"`
 }
 
 type Config struct {
 	Server              ServerConfig
 	Google              GoogleConfig
+	Teams               TeamsConfig
 	Unleash             UnleashConfig
 	DebugMode           bool
 	CloudConnectorProxy string `env:"BIFROST_CLOUD_CONNECTOR_PROXY_IMAGE,default=gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0"`

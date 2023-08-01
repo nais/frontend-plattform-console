@@ -11,12 +11,12 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime/pkg/client"
 )
 
-func createDatabase(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) (*admin.Database, error) {
+func createDatabase(ctx context.Context, client ISQLDatabasesService, projectName, instanceName, databaseName string) (*admin.Database, error) {
 	database := &admin.Database{
 		Name: databaseName,
 	}
 
-	_, err := client.Databases.Insert(instance.Project, instance.Name, database).Context(ctx).Do()
+	_, err := client.Insert(projectName, instanceName, database).Context(ctx).Do()
 	if err != nil {
 		return database, err
 	}
@@ -24,8 +24,8 @@ func createDatabase(ctx context.Context, client *admin.Service, instance *admin.
 	return database, nil
 }
 
-func getDatabaseUser(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) (*admin.User, error) {
-	user, err := client.Users.Get(instance.Project, instance.Name, databaseName).Context(ctx).Do()
+func getDatabaseUser(ctx context.Context, client ISQLUsersService, projectName, instanceName, databaseName string) (*admin.User, error) {
+	user, err := client.Get(projectName, instanceName, databaseName).Context(ctx).Do()
 	if err != nil {
 		return user, err
 	}
@@ -33,7 +33,7 @@ func getDatabaseUser(ctx context.Context, client *admin.Service, instance *admin
 	return user, nil
 }
 
-func createDatabaseUser(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) (*admin.User, error) {
+func createDatabaseUser(ctx context.Context, client ISQLUsersService, projectName, instanceName, databaseName string) (*admin.User, error) {
 	password, err := randomPassword(16)
 	if err != nil {
 		return nil, err
@@ -44,7 +44,7 @@ func createDatabaseUser(ctx context.Context, client *admin.Service, instance *ad
 		Password: password,
 	}
 
-	_, err = client.Users.Insert(instance.Project, instance.Name, user).Context(ctx).Do()
+	_, err = client.Insert(projectName, instanceName, user).Context(ctx).Do()
 	if err != nil {
 		return user, err
 	}
@@ -52,8 +52,8 @@ func createDatabaseUser(ctx context.Context, client *admin.Service, instance *ad
 	return user, nil
 }
 
-func deleteDatabaseUser(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) error {
-	_, err := client.Users.Delete(instance.Project, instance.Name).Name(databaseName).Context(ctx).Do()
+func deleteDatabaseUser(ctx context.Context, client ISQLUsersService, projectName, instanceName, databaseName string) error {
+	_, err := client.Delete(projectName, instanceName).Name(databaseName).Context(ctx).Do()
 	if err != nil {
 		return err
 	}
@@ -73,8 +73,8 @@ func randomPassword(length int) (string, error) {
 	return password, nil
 }
 
-func getDatabase(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) (*admin.Database, error) {
-	database, err := client.Databases.Get(instance.Project, instance.Name, databaseName).Do()
+func getDatabase(ctx context.Context, client ISQLDatabasesService, projectName, instanceName, databaseName string) (*admin.Database, error) {
+	database, err := client.Get(projectName, instanceName, databaseName).Do()
 	if err != nil {
 		return nil, err
 	}
@@ -82,8 +82,8 @@ func getDatabase(ctx context.Context, client *admin.Service, instance *admin.Dat
 	return database, nil
 }
 
-func deleteDatabase(ctx context.Context, client *admin.Service, instance *admin.DatabaseInstance, databaseName string) error {
-	_, err := client.Databases.Delete(instance.Project, instance.Name, databaseName).Do()
+func deleteDatabase(ctx context.Context, client ISQLDatabasesService, projectName, instanceName, databaseName string) error {
+	_, err := client.Delete(projectName, instanceName, databaseName).Do()
 	if err != nil {
 		return err
 	}
@@ -91,7 +91,7 @@ func deleteDatabase(ctx context.Context, client *admin.Service, instance *admin.
 	return nil
 }
 
-func createDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace string, instance *admin.DatabaseInstance, database *admin.Database, user *admin.User) error {
+func createDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace, instanceName, instanceAddress, projectName string, database *admin.Database, user *admin.User) error {
 	secret := &v1.Secret{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      database.Name,
@@ -105,7 +105,7 @@ func createDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace
 			"POSTGRES_USER":     []byte(database.Name),
 			"POSTGRES_PASSWORD": []byte(user.Password),
 			"POSTGRES_DB":       []byte(database.Name),
-			"POSTGRES_HOST":     []byte(instance.IpAddresses[0].IpAddress),
+			"POSTGRES_HOST":     []byte(instanceAddress),
 		},
 	}
 

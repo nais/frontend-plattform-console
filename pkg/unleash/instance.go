@@ -14,19 +14,20 @@ import (
 )
 
 type UnleashInstance struct {
-	TeamName            string
-	KubernetesNamespace string
-	CreatedAt           metav1.Time
-	ServerInstance      *unleashv1.Unleash
-	DatabaseInstance    *admin.DatabaseInstance
-	Database            *admin.Database
-	DatabaseUser        *admin.User
-	DatabaseSecret      *corev1.Secret
+	Name                 string
+	KubernetesNamespace  string
+	CreatedAt            metav1.Time
+	ServerInstance       *unleashv1.Unleash
+	DatabaseInstanceName string
+	DatabaseProjectName  string
+	Database             *admin.Database
+	DatabaseUser         *admin.User
+	DatabaseSecret       *corev1.Secret
 }
 
 func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
 	return &UnleashInstance{
-		TeamName:            serverInstance.ObjectMeta.Name,
+		Name:                serverInstance.ObjectMeta.Name,
 		KubernetesNamespace: serverInstance.ObjectMeta.Namespace,
 		CreatedAt:           serverInstance.ObjectMeta.CreationTimestamp,
 		ServerInstance:      serverInstance,
@@ -77,8 +78,8 @@ func (u *UnleashInstance) StatusLabel() string {
 	}
 }
 
-func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service) error {
-	database, err := getDatabase(ctx, client, u.DatabaseInstance, u.TeamName)
+func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.DatabasesService) error {
+	database, err := getDatabase(ctx, client, u.DatabaseInstanceName, u.DatabaseProjectName, u.Name)
 	if err != nil {
 		return err
 	}
@@ -88,8 +89,8 @@ func (u *UnleashInstance) GetDatabase(ctx context.Context, client *admin.Service
 	return nil
 }
 
-func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.Service) error {
-	user, err := getDatabaseUser(ctx, client, u.DatabaseInstance, u.TeamName)
+func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.UsersService) error {
+	user, err := getDatabaseUser(ctx, client, u.DatabaseInstanceName, u.DatabaseProjectName, u.Name)
 	if err != nil {
 		return err
 	}
@@ -99,22 +100,64 @@ func (u *UnleashInstance) GetDatabaseUser(ctx context.Context, client *admin.Ser
 	return nil
 }
 
-func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
-	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}}
+func getServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) (*unleashv1.Unleash, error) {
+	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: kubeNamespace}}
+	err := kubeClient.Get(ctx, ctrl.ObjectKeyFromObject(&unleashDefinition), &unleashDefinition)
+	if err != nil {
+		return nil, err
+	}
+	return &unleashDefinition, nil
+}
+
+func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
+	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: kubeNamespace}}
 	return kubeClient.Delete(ctx, &unleashDefinition)
 }
 
-func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName string) error {
-	unleashDefinition := NewUnleashSpec(config, teamName)
+func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	unleashDefinition := UnleashDefinition(config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
-func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
-	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}}
+func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	unleashDefinitionOld, err := getServer(ctx, kubeClient, config.Unleash.InstanceNamespace, name)
+	if err != nil {
+		return err
+	}
+
+	unleashDefinitionNew := UnleashDefinition(config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	unleashDefinitionNew.ObjectMeta.ResourceVersion = unleashDefinitionOld.ObjectMeta.ResourceVersion
+
+	return kubeClient.Update(ctx, &unleashDefinitionNew)
+}
+
+func getFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) (*fqdnV1alpha3.FQDNNetworkPolicy, error) {
+	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-fqdn", name), Namespace: kubeNamespace}}
+	err := kubeClient.Get(ctx, ctrl.ObjectKeyFromObject(&fqdn), &fqdn)
+	if err != nil {
+		return nil, err
+	}
+	return &fqdn, nil
+}
+
+func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
+	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: kubeNamespace}}
 	return kubeClient.Delete(ctx, &fqdn)
 }
 
-func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
-	fqdn := newFQDNNetworkPolicySpec(teamName, kubeNamespace)
+func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
+	fqdn := FQDNNetworkPolicyDefinition(name, kubeNamespace)
 	return kubeClient.Create(ctx, &fqdn)
+}
+
+func updateFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
+	fqdnOld, err := getFQDNNetworkPolicy(ctx, kubeClient, kubeNamespace, name)
+	if err != nil {
+		return err
+	}
+
+	fqdnNew := FQDNNetworkPolicyDefinition(name, kubeNamespace)
+	fqdnNew.ObjectMeta.ResourceVersion = fqdnOld.ObjectMeta.ResourceVersion
+
+	return kubeClient.Update(ctx, &fqdnNew)
 }
