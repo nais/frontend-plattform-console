@@ -26,6 +26,7 @@ func (h *Handler) ErrorHandler(c *gin.Context) {
 		})
 	}
 }
+
 func (h *Handler) UnleashIndex(c *gin.Context) {
 	ctx := c.Request.Context()
 	instances, err := h.unleashService.List(ctx)

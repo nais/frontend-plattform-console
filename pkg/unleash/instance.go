@@ -109,6 +109,11 @@ func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Co
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
+func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, teamName, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
+	unleashDefinition := UnleashSpec(config, teamName, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	return kubeClient.Update(ctx, &unleashDefinition)
+}
+
 func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
 	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: teamName, Namespace: kubeNamespace}}
 	return kubeClient.Delete(ctx, &fqdn)
@@ -117,4 +122,9 @@ func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNa
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
 	fqdn := FQDNNetworkPolicySpec(teamName, kubeNamespace)
 	return kubeClient.Create(ctx, &fqdn)
+}
+
+func updateFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, teamName string) error {
+	fqdn := FQDNNetworkPolicySpec(teamName, kubeNamespace)
+	return kubeClient.Update(ctx, &fqdn)
 }
