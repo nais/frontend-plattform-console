@@ -193,7 +193,13 @@ func TestUnleashGet(t *testing.T) {
 	_, _, router := newUnleashRoute()
 
 	w := httptest.NewRecorder()
-	req, _ := http.NewRequest("GET", "/unleash/team1", nil)
+	req, _ := http.NewRequest("GET", "/unleash/does-not-exist/", nil)
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 301, w.Code)
+	assert.Equal(t, "/unleash?status=not-found", w.Header().Get("Location"))
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/unleash/team1", nil)
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 301, w.Code)
 	assert.Equal(t, "/unleash/team1/", w.Header().Get("Location"))

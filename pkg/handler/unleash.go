@@ -70,7 +70,7 @@ func (h *Handler) UnleashInstanceMiddleware(c *gin.Context) {
 	instance, err := h.unleashService.Get(ctx, teamName)
 	if err != nil {
 		h.logger.Info(err)
-		c.Redirect(404, "/unleash?status=not-found")
+		c.Redirect(301, "/unleash?status=not-found")
 		c.Abort()
 		return
 	}
