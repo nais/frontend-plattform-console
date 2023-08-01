@@ -5,7 +5,7 @@
   <a class="section" href="/unleash/">Unleash</a>
   <div class="divider"> / </div>
   {{ if eq .action "create" }}
-  <div class="active section">New Unleash Instance</div>
+  <div class="active section">New</div>
   {{ else }}
   <a class="section" href="/unleash/{{ .name }}">{{ .name }}</a>
   <div class="divider"> / </div>
@@ -22,11 +22,11 @@
         <label>Instance Name</label>
         <input name="name" type="text"{{ if eq .action "edit" }} disabled{{ end }} value="{{ .name }}">
       </div>
-      <div class="version field{{ if .customImageVersionError }} error{{ end }}">
+      <div class="version field{{ if .customVersionError }} error{{ end }}">
         <label>Custom Version</label>
         <div class="ui labeled input">
           <div class="ui label">{{ .customImageName }}:</div>
-          <input name="custom-image-version" type="text" value="{{ .customImageVersion }}" placeholder="1.2.3">
+          <input name="custom-version" type="text" value="{{ .customVersion }}" placeholder="1.2.3">
         </div>
       </div>
     </div>
@@ -70,12 +70,44 @@
     <p>Clusters that are allowed to access this Unleash server.</p>
   </div>
 
+  <div class="inline fields">
+    <label for="fruit">Log Level:</label>
+    <div class="field">
+      <div class="ui radio checkbox{{ if eq .logLevel "error"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="error" {{ if eq .logLevel "error"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+        <label>Error</label>
+      </div>
+    </div>
+    <div class="field">
+      <div class="ui radio checkbox checked{{ if eq .logLevel "warn"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="warn" {{ if eq .logLevel "warn"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+        <label>Warn</label>
+      </div>
+    </div>
+    <div class="field">
+      <div class="ui radio checkbox{{ if eq .logLevel "info"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="info" {{ if eq .logLevel "info"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+        <label>Info</label>
+      </div>
+    </div>
+    <div class="field">
+      <div class="ui radio checkbox{{ if eq .logLevel "debug"}} checked{{ end }}">
+        <tnput type="radio" name="loglevel" value="debug" {{ if eq .logLevel "debug"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+        <label>Debug</label>
+      </div>
+    </div>
+  </div>
+
   <script>
     window.onload = function() {
       $('.ui.dropdown')
         .dropdown({
           allowAdditions: true
         })
+      ;
+
+      $('.ui.radio.checkbox')
+        .checkbox()
       ;
     }
   </script>

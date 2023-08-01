@@ -83,21 +83,30 @@ func TestCustomImageForVersion(t *testing.T) {
 }
 
 func TestUnleashVariables(t *testing.T) {
-	c := config.Config{}
+	c := &config.Config{}
 
-	unleashInstance := UnleashDefinition(&c, "my-team", "1.2.3", "team-a,team-b", "namespace-a,namespace-b", "cluster-a,cluster-b")
-	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := UnleashVariables(&unleashInstance, true)
+	unleashInstance := UnleashDefinition(c, &UnleashConfig{
+		Name:              "my-instance",
+		CustomVersion:     "1.2.3",
+		AllowedTeams:      "team-a,team-b",
+		AllowedNamespaces: "namespace-a,namespace-b",
+		AllowedClusters:   "cluster-a,cluster-b",
+		LogLevel:          "debug",
+	})
 
-	assert.Equal(t, "my-team", name)
-	assert.Equal(t, "1.2.3", customVersion)
-	assert.Equal(t, "team-a,team-b", allowedTeams)
-	assert.Equal(t, "namespace-a,namespace-b", allowedNamespaces)
-	assert.Equal(t, "cluster-a,cluster-b", allowedClusters)
+	uc := UnleashVariables(&unleashInstance, true)
+
+	assert.Equal(t, "my-instance", uc.Name)
+	assert.Equal(t, "1.2.3", uc.CustomVersion)
+	assert.Equal(t, "team-a,team-b", uc.AllowedTeams)
+	assert.Equal(t, "namespace-a,namespace-b", uc.AllowedNamespaces)
+	assert.Equal(t, "cluster-a,cluster-b", uc.AllowedClusters)
+	assert.Equal(t, "debug", uc.LogLevel)
 }
 
 func TestFQDNNetworkPolicySpec(t *testing.T) {
-	teamName := "my-team"
-	kubeNamespace := "my-teamspace"
+	teamName := "my-instance"
+	kubeNamespace := "my-instancespace"
 
 	protocolTCP := corev1.ProtocolTCP
 
@@ -108,13 +117,13 @@ func TestFQDNNetworkPolicySpec(t *testing.T) {
 			APIVersion: "networking.gke.io/v1alpha3",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      "my-team-fqdn",
+			Name:      "my-instance-fqdn",
 			Namespace: kubeNamespace,
 		},
 		Spec: fqdnV1alpha3.FQDNNetworkPolicySpec{
 			PodSelector: metav1.LabelSelector{
 				MatchLabels: map[string]string{
-					"app.kubernetes.io/instance":   "my-team",
+					"app.kubernetes.io/instance":   "my-instance",
 					"app.kubernetes.io/part-of":    "unleasherator",
 					"app.kubernetes.io/name":       "Unleash",
 					"app.kubernetes.io/created-by": "controller-manager",
@@ -178,7 +187,7 @@ func TestUnleashSpec(t *testing.T) {
 			InstanceAPIIngressHost:  "unleash-api.example.com",
 			InstanceAPIIngressClass: "unleash-api-ingress-class",
 			TeamsApiURL:             "teams.example.com",
-			TeamsApiSecretName:      "my-teams-api-secret",
+			TeamsApiSecretName:      "my-instances-api-secret",
 			TeamsApiSecretTokenKey:  "token",
 		},
 		CloudConnectorProxy: "repo/connector:latest",
@@ -191,14 +200,14 @@ func TestUnleashSpec(t *testing.T) {
 	teamsApiPort := intstr.FromInt(3000)
 
 	t.Run("default values", func(t *testing.T) {
-		a := UnleashDefinition(&c, "my-team", "", "", "", "")
+		a := UnleashDefinition(&c, &UnleashConfig{Name: "my-instance"})
 		b := unleashv1.Unleash{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Unleash",
 				APIVersion: "unleash.nais.io/v1",
 			},
 			ObjectMeta: metav1.ObjectMeta{
-				Name:      "my-team",
+				Name:      "my-instance",
 				Namespace: "unleash-ns",
 			},
 			Spec: unleashv1.UnleashSpec{
@@ -207,20 +216,20 @@ func TestUnleashSpec(t *testing.T) {
 					Host:                  "localhost",
 					Port:                  "5432",
 					SSL:                   "false",
-					SecretName:            "my-team",
+					SecretName:            "my-instance",
 					SecretUserKey:         "POSTGRES_USER",
 					SecretPassKey:         "POSTGRES_PASSWORD",
 					SecretDatabaseNameKey: "POSTGRES_DB",
 				},
 				WebIngress: unleashv1.UnleashIngressConfig{
 					Enabled: true,
-					Host:    "my-team-unleash-web.example.com",
+					Host:    "my-instance-unleash-web.example.com",
 					Path:    "/",
 					Class:   "unleash-web-ingress-class",
 				},
 				ApiIngress: unleashv1.UnleashIngressConfig{
 					Enabled: true,
-					Host:    "my-team-unleash-api.example.com",
+					Host:    "my-instance-unleash-api.example.com",
 					Path:    "/",
 					Class:   "unleash-api-ingress-class",
 				},
@@ -267,7 +276,7 @@ func TestUnleashSpec(t *testing.T) {
 					ValueFrom: &corev1.EnvVarSource{
 						SecretKeyRef: &corev1.SecretKeySelector{
 							LocalObjectReference: corev1.LocalObjectReference{
-								Name: "my-teams-api-secret",
+								Name: "my-instances-api-secret",
 							},
 							Key: "token",
 						},
@@ -283,7 +292,7 @@ func TestUnleashSpec(t *testing.T) {
 					Value: "",
 				}, {
 					Name:  "LOG_LEVEL",
-					Value: "warn",
+					Value: "",
 				}},
 				ExtraContainers: []corev1.Container{{
 					Name:  "sql-proxy",
@@ -312,7 +321,15 @@ func TestUnleashSpec(t *testing.T) {
 	})
 
 	t.Run("custom single values", func(t *testing.T) {
-		a := UnleashDefinition(&c, "my-team", "9.9.9", "my-team", "my-team-ns", "my-cluster")
+		uc := &UnleashConfig{
+			Name:              "my-instance",
+			CustomVersion:     "9.9.9",
+			AllowedTeams:      "my-team",
+			AllowedNamespaces: "my-namespace",
+			AllowedClusters:   "my-cluster",
+			LogLevel:          "debug",
+		}
+		a := UnleashDefinition(&c, uc)
 
 		assert.Equal(t, a.Spec.CustomImage, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:9.9.9")
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
@@ -322,17 +339,31 @@ func TestUnleashSpec(t *testing.T) {
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
 			Name:  "TEAMS_ALLOWED_NAMESPACES",
-			Value: "my-team-ns",
+			Value: "my-namespace",
 		})
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
 			Name:  "TEAMS_ALLOWED_CLUSTERS",
 			Value: "my-cluster",
 		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "LOG_LEVEL",
+			Value: "debug",
+		})
 	})
 
 	t.Run("custom multiple values", func(t *testing.T) {
-		a := UnleashDefinition(&c, "my-team", "9.9.9", "team-a,team-b,team-c", "ns-a,ns-b,ns-c", "cluster-a,cluster-b,cluster-c")
+		uc := &UnleashConfig{
+			Name:              "my-instance",
+			CustomVersion:     "9.9.9",
+			AllowedTeams:      "team-a,team-b,team-c",
+			AllowedNamespaces: "ns-a,ns-b,ns-c",
+			AllowedClusters:   "cluster-a,cluster-b,cluster-c",
+			LogLevel:          "debug",
+		}
+
+		a := UnleashDefinition(&c, uc)
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
 			Name:  "TEAMS_ALLOWED_TEAMS",

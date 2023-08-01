@@ -114,18 +114,18 @@ func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace str
 	return kubeClient.Delete(ctx, &unleashDefinition)
 }
 
-func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	unleashDefinition := UnleashDefinition(config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
+func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) error {
+	unleashDefinition := UnleashDefinition(config, uc)
 	return kubeClient.Create(ctx, &unleashDefinition)
 }
 
-func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	unleashDefinitionOld, err := getServer(ctx, kubeClient, config.Unleash.InstanceNamespace, name)
+func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) error {
+	unleashDefinitionOld, err := getServer(ctx, kubeClient, config.Unleash.InstanceNamespace, uc.Name)
 	if err != nil {
 		return err
 	}
 
-	unleashDefinitionNew := UnleashDefinition(config, name, customImageVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	unleashDefinitionNew := UnleashDefinition(config, uc)
 	unleashDefinitionNew.ObjectMeta.ResourceVersion = unleashDefinitionOld.ObjectMeta.ResourceVersion
 
 	return kubeClient.Update(ctx, &unleashDefinitionNew)

@@ -38,11 +38,11 @@ func (s *MockUnleashService) Get(ctx context.Context, name string) (*unleash.Unl
 	return nil, fmt.Errorf("instance not found")
 }
 
-func (s *MockUnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	spec := unleash.UnleashDefinition(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+func (s *MockUnleashService) Create(ctx context.Context, uc *unleash.UnleashConfig) error {
+	spec := unleash.UnleashDefinition(s.c, uc)
 
 	s.Instances = append(s.Instances, &unleash.UnleashInstance{
-		Name:           name,
+		Name:           uc.Name,
 		CreatedAt:      metav1.Now(),
 		ServerInstance: &spec,
 	})
@@ -50,11 +50,11 @@ func (s *MockUnleashService) Create(ctx context.Context, name, customVersion, al
 	return nil
 }
 
-func (s *MockUnleashService) Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	spec := unleash.UnleashDefinition(s.c, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+func (s *MockUnleashService) Update(ctx context.Context, uc *unleash.UnleashConfig) error {
+	spec := unleash.UnleashDefinition(s.c, uc)
 
 	for _, instance := range s.Instances {
-		if instance.Name == name {
+		if instance.Name == uc.Name {
 			instance.ServerInstance = &spec
 			return nil
 		}
@@ -72,6 +72,17 @@ func (s *MockUnleashService) Delete(ctx context.Context, name string) error {
 	}
 
 	return fmt.Errorf("instance not found")
+}
+
+func unleashConfigToForm(uc *unleash.UnleashConfig) string {
+	return fmt.Sprintf("name=%s&custom-version=%s&allowed-teams=%s&allowed-namespaces=%s&allowed-clusters=%s&loglevel=%s",
+		uc.Name,
+		uc.CustomVersion,
+		uc.AllowedTeams,
+		uc.AllowedNamespaces,
+		uc.AllowedClusters,
+		uc.LogLevel,
+	)
 }
 
 func TestHealthzRoute(t *testing.T) {
@@ -176,7 +187,16 @@ func TestUnleashNew(t *testing.T) {
 	assert.Equal(t, "my-name", service.Instances[2].Name)
 
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader("name=my-name&custom-image-version=1.2.3&allowed-teams=team1,team2&allowed-namespaces=ns1,ns2&allowed-clusters=cluster1,cluster2"))
+	uc := &unleash.UnleashConfig{
+		Name:              "my-name",
+		CustomVersion:     "1.2.3",
+		AllowedTeams:      "team1,team2",
+		AllowedNamespaces: "ns1,ns2",
+		AllowedClusters:   "cluster1,cluster2",
+		LogLevel:          "debug",
+	}
+
+	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader(unleashConfigToForm(uc)))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 302, w.Code)
@@ -187,6 +207,7 @@ func TestUnleashNew(t *testing.T) {
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_TEAMS", Value: "team1,team2"})
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_NAMESPACES", Value: "ns1,ns2"})
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "TEAMS_ALLOWED_CLUSTERS", Value: "cluster1,cluster2"})
+	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "LOG_LEVEL", Value: "debug"})
 }
 
 func TestUnleashGet(t *testing.T) {

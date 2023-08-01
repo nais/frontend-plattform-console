@@ -106,27 +106,35 @@ func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string, retur
 	}
 }
 
-func UnleashVariables(server *unleashv1.Unleash, returnDefaults bool) (name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) {
-	name = server.GetName()
+type UnleashConfig struct {
+	Name              string
+	CustomVersion     string
+	AllowedTeams      string
+	AllowedNamespaces string
+	AllowedClusters   string
+	LogLevel          string
+}
+
+func UnleashVariables(server *unleashv1.Unleash, returnDefaults bool) *UnleashConfig {
+	uc := &UnleashConfig{}
+
+	uc.Name = server.GetName()
 
 	if server.Spec.CustomImage != "" {
-		customVersion = versionFromImage(server.Spec.CustomImage)
+		uc.CustomVersion = versionFromImage(server.Spec.CustomImage)
 	}
 
-	allowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", name, returnDefaults)
-	allowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", name, returnDefaults)
-	allowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "prod-gcp,dev-gcp", returnDefaults)
+	uc.AllowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", uc.Name, returnDefaults)
+	uc.AllowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", uc.Name, returnDefaults)
+	uc.AllowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "prod-gcp,dev-gcp", returnDefaults)
+	uc.LogLevel = getServerEnvVar(server, "LOG_LEVEL", "warn", returnDefaults)
 
-	return
+	return uc
 }
 
 func UnleashDefinition(
 	c *config.Config,
-	name,
-	customVersion,
-	allowedTeams,
-	allowedNamespaces,
-	allowedClusters string,
+	uc *UnleashConfig,
 ) unleashv1.Unleash {
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
@@ -144,7 +152,7 @@ func UnleashDefinition(
 			APIVersion: "unleash.nais.io/v1",
 		},
 		ObjectMeta: metav1.ObjectMeta{
-			Name:      name,
+			Name:      uc.Name,
 			Namespace: c.Unleash.InstanceNamespace,
 		},
 		Spec: unleashv1.UnleashSpec{
@@ -153,20 +161,20 @@ func UnleashDefinition(
 				Host:                  "localhost",
 				Port:                  "5432",
 				SSL:                   "false",
-				SecretName:            name,
+				SecretName:            uc.Name,
 				SecretUserKey:         "POSTGRES_USER",
 				SecretPassKey:         "POSTGRES_PASSWORD",
 				SecretDatabaseNameKey: "POSTGRES_DB",
 			},
 			WebIngress: unleashv1.UnleashIngressConfig{
 				Enabled: true,
-				Host:    fmt.Sprintf("%s-%s", name, c.Unleash.InstanceWebIngressHost),
+				Host:    fmt.Sprintf("%s-%s", uc.Name, c.Unleash.InstanceWebIngressHost),
 				Path:    "/",
 				Class:   c.Unleash.InstanceWebIngressClass,
 			},
 			ApiIngress: unleashv1.UnleashIngressConfig{
 				Enabled: true,
-				Host:    fmt.Sprintf("%s-%s", name, c.Unleash.InstanceAPIIngressHost),
+				Host:    fmt.Sprintf("%s-%s", uc.Name, c.Unleash.InstanceAPIIngressHost),
 				// Allow access to /health endpoint, change to /api when https://github.com/nais/unleasherator/issues/100 is resolved
 				Path:  "/",
 				Class: c.Unleash.InstanceAPIIngressClass,
@@ -224,16 +232,16 @@ func UnleashDefinition(
 				},
 			}, {
 				Name:  "TEAMS_ALLOWED_TEAMS",
-				Value: allowedTeams,
+				Value: uc.AllowedTeams,
 			}, {
 				Name:  "TEAMS_ALLOWED_NAMESPACES",
-				Value: allowedNamespaces,
+				Value: uc.AllowedNamespaces,
 			}, {
 				Name:  "TEAMS_ALLOWED_CLUSTERS",
-				Value: allowedClusters,
+				Value: uc.AllowedClusters,
 			}, {
 				Name:  "LOG_LEVEL",
-				Value: "warn",
+				Value: uc.LogLevel,
 			}},
 			ExtraContainers: []corev1.Container{{
 				Name:  "sql-proxy",
@@ -260,8 +268,8 @@ func UnleashDefinition(
 		},
 	}
 
-	if customVersion != "" {
-		server.Spec.CustomImage = customImageForVersion(customVersion)
+	if uc.CustomVersion != "" {
+		server.Spec.CustomImage = customImageForVersion(uc.CustomVersion)
 	}
 
 	return server
