@@ -15,8 +15,8 @@ import (
 type IUnleashService interface {
 	List(ctx context.Context) ([]*UnleashInstance, error)
 	Get(ctx context.Context, name string) (*UnleashInstance, error)
-	Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error
-	Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error
+	Create(ctx context.Context, uc *UnleashConfig) error
+	Update(ctx context.Context, uc *UnleashConfig) error
 	Delete(ctx context.Context, name string) error
 }
 
@@ -94,12 +94,12 @@ func (s *UnleashService) Get(ctx context.Context, name string) (*UnleashInstance
 	return NewUnleashInstance(serverInstance), nil
 }
 
-func (s *UnleashService) Create(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	database, dbErr := createDatabase(ctx, s.sqlDatabasesClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
-	databaseUser, dbUserErr := createDatabaseUser(ctx, s.sqlUsersClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, name)
+func (s *UnleashService) Create(ctx context.Context, uc *UnleashConfig) error {
+	database, dbErr := createDatabase(ctx, s.sqlDatabasesClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, uc.Name)
+	databaseUser, dbUserErr := createDatabaseUser(ctx, s.sqlUsersClient, s.config.Google.ProjectID, s.config.Unleash.SQLInstanceID, uc.Name)
 	secretErr := createDatabaseUserSecret(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, s.config.Unleash.SQLInstanceID, s.config.Unleash.SQLInstanceAddress, s.config.Google.ProjectID, database, databaseUser)
 	fqdnError := createFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, database.Name)
-	serverError := createServer(ctx, s.kubeClient, s.config, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+	serverError := createServer(ctx, s.kubeClient, s.config, uc)
 
 	if err := errors.Join(dbErr, dbUserErr, secretErr, fqdnError, serverError); err != nil {
 		return err
@@ -107,9 +107,9 @@ func (s *UnleashService) Create(ctx context.Context, name, customVersion, allowe
 	return nil
 }
 
-func (s *UnleashService) Update(ctx context.Context, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) error {
-	fqdnError := updateFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, name)
-	serverError := updateServer(ctx, s.kubeClient, s.config, name, customVersion, allowedTeams, allowedNamespaces, allowedClusters)
+func (s *UnleashService) Update(ctx context.Context, uc *UnleashConfig) error {
+	fqdnError := updateFQDNNetworkPolicy(ctx, s.kubeClient, s.config.Unleash.InstanceNamespace, uc.Name)
+	serverError := updateServer(ctx, s.kubeClient, s.config, uc)
 
 	if err := errors.Join(fqdnError, serverError); err != nil {
 		return err

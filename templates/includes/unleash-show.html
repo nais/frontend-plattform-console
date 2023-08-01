@@ -37,10 +37,12 @@
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
-      {{ if .unleashAllowedTeams }}
-      <a class="ui label">{{ .unleashAllowedTeams }}</a>
+      {{ if len .unleashAllowedTeams }}
+      {{ range $index, $element := .unleashAllowedTeams }}
+        <span class="ui label">{{ $element }}</span>
+      {{ end }}
       {{ else }}
-      <div class="ui red label">
+      <div class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
       </div>
       {{ end }}
@@ -50,10 +52,12 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      {{ if .unleashAllowedNamespaces }}
-      <a class="ui label">{{ .unleashAllowedNamespaces }}</a>
+      {{ if len .unleashAllowedNamespaces }}
+      {{ range $index, $element := .unleashAllowedNamespaces }}
+        <span class="ui label">{{ $element }}</span>
+      {{ end }}
       {{ else }}
-      <div class="ui red label">
+      <div class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
       </div>
       {{ end }}
@@ -63,10 +67,12 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      {{ if .unleashAllowedClusters }}
-      <a class="ui label">{{ .unleashAllowedClusters }}</a>
+      {{ if len .unleashAllowedClusters }}
+      {{ range $index, $element := .unleashAllowedClusters }}
+        <span class="ui label">{{ $element }}</span>
+      {{ end }}
       {{ else }}
-      <div class="ui red label">
+      <div class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
       </div>
       {{ end }}
@@ -87,7 +93,7 @@
   <div class="item">
     <div class="right floated content">
       {{ if .unleashCustomVersion }}
-      <div class="ui red label">
+      <div class="ui orange label">
         <i class="exclamation triangle icon"></i> {{ .unleashCustomVersion }}</span>
       </div>
       {{ else }}
@@ -98,6 +104,17 @@
     </div>
     <!-- <i class="large internet explorer middle aligned icon"></i>-->
     <div class="content">Custom Version</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashLogLevel }}
+      <div class="ui label">{{ .unleashLogLevel }}</div>
+      {{ else }}
+      <div class="ui yellow label">Unknown</div>
+      {{ end }}
+    </div>
+    <!-- <i class="large internet explorer middle aligned icon"></i>-->
+    <div class="content">Log Level</div>
   </div>
   <div class="item">
     <div class="right floated content">
