@@ -27,6 +27,55 @@
 </div>
 
 <h3 class="ui header">
+  <i class="user icon"></i>
+  <div class="content">
+    Access Control
+    <div class="sub header">Access to Unleash</div>
+  </div>
+</h3>
+
+<div class="ui middle aligned divided list">
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashAllowedTeams }}
+      <a class="ui label">{{ .unleashAllowedTeams }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Empty
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Allowed Teams</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashAllowedNamespaces }}
+      <a class="ui label">{{ .unleashAllowedNamespaces }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Empty
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Allowed Namespaces</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashAllowedClusters }}
+      <a class="ui label">{{ .unleashAllowedClusters }}</a>
+      {{ else }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> Empty
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Allowed Clusters</div>
+  </div>
+</div>
+<h3 class="ui header">
   <i class="settings icon"></i>
   <div class="content">
     Server Settings
@@ -35,6 +84,21 @@
 </h3>
 
 <div class="ui middle aligned divided list">
+  <div class="item">
+    <div class="right floated content">
+      {{ if .unleashCustomVersion }}
+      <div class="ui red label">
+        <i class="exclamation triangle icon"></i> {{ .unleashCustomVersion }}</span>
+      </div>
+      {{ else }}
+      <div class="ui green label">
+        Latest
+      </div>
+      {{ end }}
+    </div>
+    <!-- <i class="large internet explorer middle aligned icon"></i>-->
+    <div class="content">Custom Version</div>
+  </div>
   <div class="item">
     <div class="right floated content">
       {{ if .instance.WebUrl }}

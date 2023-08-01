@@ -249,6 +249,9 @@ func TestUnleashSpec(t *testing.T) {
 				}, {
 					Name:  "TEAMS_ALLOWED_CLUSTERS",
 					Value: "",
+				}, {
+					Name:  "LOG_LEVEL",
+					Value: "warn",
 				}},
 				ExtraContainers: []corev1.Container{{
 					Name:  "sql-proxy",

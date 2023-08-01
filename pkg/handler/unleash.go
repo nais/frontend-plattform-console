@@ -89,21 +89,22 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 		instanceYaml = "Parse error - see logs"
 	}
 
-	// @TODO get more info about the instance
-	// h.unleashService.
-	// instance.GetDatabase()
-	// instance.GetDatabaseUser()
+	_, customVersion, allowedTeams, allowedNamespaces, allowedClusters := unleash.UnleashVariables(instance.ServerInstance)
 
 	c.HTML(200, "unleash-show.html", gin.H{
-		"title":              "Unleash: " + instance.Name,
-		"instance":           instance,
-		"googleProjectID":    h.config.Google.ProjectID,
-		"sqlInstanceID":      h.config.Unleash.SQLInstanceID,
-		"sqlInstanceAddress": h.config.Unleash.SQLInstanceAddress,
-		"sqlInstanceRegion":  h.config.Unleash.SQLInstanceRegion,
-		"sqlDatabaseName":    instance.Name,
-		"sqlDatabaseUser":    instance.Name,
-		"sqlDatabaseSecret":  instance.Name,
+		"title":                    "Unleash: " + instance.Name,
+		"instance":                 instance,
+		"unleashCustomVersion":     customVersion,
+		"unleashAllowedTeams":      allowedTeams,
+		"unleashAllowedNamespaces": allowedNamespaces,
+		"unleashAllowedClusters":   allowedClusters,
+		"googleProjectID":          h.config.Google.ProjectID,
+		"sqlInstanceID":            h.config.Unleash.SQLInstanceID,
+		"sqlInstanceAddress":       h.config.Unleash.SQLInstanceAddress,
+		"sqlInstanceRegion":        h.config.Unleash.SQLInstanceRegion,
+		"sqlDatabaseName":          instance.Name,
+		"sqlDatabaseUser":          instance.Name,
+		"sqlDatabaseSecret":        instance.Name,
 
 		"instanceYaml": template.HTML(instanceYaml),
 	})

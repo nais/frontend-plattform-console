@@ -227,6 +227,9 @@ func UnleashDefinition(
 			}, {
 				Name:  "TEAMS_ALLOWED_CLUSTERS",
 				Value: allowedClusters,
+			}, {
+				Name:  "LOG_LEVEL",
+				Value: "warn",
 			}},
 			ExtraContainers: []corev1.Container{{
 				Name:  "sql-proxy",
