@@ -13,40 +13,40 @@ backend:
 
   unleash:
     # Kubernetes namespace to create unleash instances in
-    instanceNamespace:  # mapped in fasit
+    # instanceNamespace:  # mapped in fasit
 
     # Shared Cloud SQL instance ID
-    sqlInstanceId:  # mapped in fasit
-    sqlInstanceAddress:  # mapped in fasit
-    sqlInstanceRegion:  # mapped in fasit
+    # sqlInstanceId:  # mapped in fasit
+    # sqlInstanceAddress:  # mapped in fasit
+    # sqlInstanceRegion:  # mapped in fasit
 
     # Shared service account (used by Cloud SQL auth proxy)
-    googleServiceAccountEmail:  # mapped in fasit
-    kubernetesServiceAccountName:  # mapped in fasit
+    # googleServiceAccountEmail:  # mapped in fasit
+    # kubernetesServiceAccountName:  # mapped in fasit
 
     # Unleash user interface web ingress config
-    webIngressClass:  # mapped in fasit
-    webIngressHost:  # mapped in fasit
+    # webIngressClass:  # mapped in fasit
+    # webIngressHost:  # mapped in fasit
 
     # Unleash api ingress config
-    apiIngressClass:  # mapped in fasit
-    apiIngressHost:  # mapped in fasit
+    # apiIngressClass:  # mapped in fasit
+    # apiIngressHost:  # mapped in fasit
 
     # Unleash teams config
     teamsApiUrl: teams-backend.nais-system.svc
-    teamsApiToken: # mapped in fasit
+    # teamsApiToken:  # mapped in fasit
     teamsApiTokenSecretName: teams-api-token
     teamsApiTokenSecretKey: token
 
-  google:
-    projectId:  # mapped in fasit
-    projectNumber:  # mapped in fasit
-    serviceAccountEmail:  # mapped in fasit
-    iapBackendServiceId:  # mapped in fasit
+  google: {}
+    # projectId:  # mapped in fasit
+    # projectNumber:  # mapped in fasit
+    # serviceAccountEmail:  # mapped in fasit
+    # iapBackendServiceId:  # mapped in fasit
 
   teams:
     apiUrl: teams-backend.nais-system.svc
-    apiToken: # mapped in fasit
+    apiToken:  # mapped in fasit
     apiTokenSecretKey: token
 
 nameOverride: ""
@@ -58,7 +58,7 @@ service:
 
 ingress:
   className: nais-ingress-iap
-  host:  # mapped in fasit
+  # host:  # mapped in fasit
 
 networkPolicy:
   enabled: true

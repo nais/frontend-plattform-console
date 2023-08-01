@@ -1,9 +1,23 @@
 backend:
   unleash:
     sqlInstanceId: bifrost-79ca6928
+    sqlInstanceAddress: 1.2.3.4
+    sqlInstanceRegion: europe-north1
+    instanceNamespace: foo
+    kubernetesServiceAccountName: bar
+    webIngressClass: baz
+    webIngressHost: foo.bar.baz
+    apiIngressClass: baz
+    apiIngressHost: foo.bar.baz
+    teamsApiToken: abc123
   google:
     projectId: "718161667033"
     serviceAccountEmail: bifrost@nais-management-7178.iam.gserviceaccount.com
+  teams:
+    apiToken: abc123
+
+networkPolicy:
+  apiServerCIDR: 1.2.3.4/32
 
 ingress:
   host: bifrost.dev-nais.cloud.nais.io
