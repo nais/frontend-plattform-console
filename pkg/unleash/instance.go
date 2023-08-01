@@ -141,7 +141,7 @@ func getFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNames
 }
 
 func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
-	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: kubeNamespace}}
+	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-fqdn", name), Namespace: kubeNamespace}}
 	return kubeClient.Delete(ctx, &fqdn)
 }
 
