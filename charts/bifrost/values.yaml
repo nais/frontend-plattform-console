@@ -46,7 +46,7 @@ backend:
 
   teams:
     apiUrl: teams-backend.nais-system.svc
-    apiToken:  # mapped in fasit
+    # apiToken:  # mapped in fasit
     apiTokenSecretKey: token
 
 nameOverride: ""
