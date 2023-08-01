@@ -24,23 +24,55 @@ func TestVersionFromImage(t *testing.T) {
 }
 
 func TestGetServerEnvVar(t *testing.T) {
-	server := &unleashv1.Unleash{
-		Spec: unleashv1.UnleashSpec{
-			ExtraEnvVars: []corev1.EnvVar{
-				{
-					Name:  "TEAMS_ALLOWED_TEAMS",
-					Value: "team-a,team-b",
-				},
-				{
-					Name:  "TEAMS_ALLOWED_NAMESPACES",
-					Value: "namespace-a,namespace-b",
+	t.Run("should return value for existing variables", func(t *testing.T) {
+		server := &unleashv1.Unleash{
+			Spec: unleashv1.UnleashSpec{
+				ExtraEnvVars: []corev1.EnvVar{
+					{
+						Name:  "TEAMS_ALLOWED_TEAMS",
+						Value: "team-a,team-b",
+					},
+					{
+						Name:  "TEAMS_ALLOWED_NAMESPACES",
+						Value: "namespace-a,namespace-b",
+					},
 				},
 			},
-		},
-	}
+		}
 
-	assert.Equal(t, "team-a,team-b", getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", "default-value"))
-	assert.Equal(t, "default-value", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value"))
+		assert.Equal(t, "team-a,team-b", getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", "default-value", true))
+		assert.Equal(t, "default-value", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value", true))
+	})
+
+	t.Run("should return default value for non-existing variables", func(t *testing.T) {
+		server := &unleashv1.Unleash{
+			Spec: unleashv1.UnleashSpec{
+				ExtraEnvVars: []corev1.EnvVar{
+					{
+						Name:  "TEAMS_ALLOWED_TEAMS",
+						Value: "team-a,team-b",
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, "default-value", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value", true))
+	})
+
+	t.Run("should return empty string for non-existing variables when default value is disabled", func(t *testing.T) {
+		server := &unleashv1.Unleash{
+			Spec: unleashv1.UnleashSpec{
+				ExtraEnvVars: []corev1.EnvVar{
+					{
+						Name:  "TEAMS_ALLOWED_TEAMS",
+						Value: "team-a,team-b",
+					},
+				},
+			},
+		}
+
+		assert.Equal(t, "", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value", false))
+	})
 }
 
 func TestCustomImageForVersion(t *testing.T) {
@@ -54,7 +86,7 @@ func TestUnleashVariables(t *testing.T) {
 	c := config.Config{}
 
 	unleashInstance := UnleashDefinition(&c, "my-team", "1.2.3", "team-a,team-b", "namespace-a,namespace-b", "cluster-a,cluster-b")
-	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := UnleashVariables(&unleashInstance)
+	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := UnleashVariables(&unleashInstance, true)
 
 	assert.Equal(t, "my-team", name)
 	assert.Equal(t, "1.2.3", customVersion)

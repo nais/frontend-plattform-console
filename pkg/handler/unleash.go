@@ -89,7 +89,7 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 		instanceYaml = "Parse error - see logs"
 	}
 
-	_, customVersion, allowedTeams, allowedNamespaces, allowedClusters := unleash.UnleashVariables(instance.ServerInstance)
+	_, customVersion, allowedTeams, allowedNamespaces, allowedClusters := unleash.UnleashVariables(instance.ServerInstance, false)
 
 	c.HTML(200, "unleash-show.html", gin.H{
 		"title":                    "Unleash: " + instance.Name,
@@ -113,7 +113,7 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 
-	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := unleash.UnleashVariables(instance.ServerInstance)
+	name, customVersion, allowedTeams, allowedNamespaces, allowedClusters := unleash.UnleashVariables(instance.ServerInstance, true)
 
 	c.HTML(200, "unleash-form.html", gin.H{
 		"title":              "Edit Unleash: " + instance.Name,

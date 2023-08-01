@@ -93,25 +93,29 @@ func versionFromImage(image string) string {
 	return strings.Split(image, ":")[1]
 }
 
-func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string) string {
+func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string, returnDefault bool) string {
 	for _, envVar := range server.Spec.ExtraEnvVars {
 		if envVar.Name == name {
 			return envVar.Value
 		}
 	}
-	return defaultValue
+	if returnDefault {
+		return defaultValue
+	} else {
+		return ""
+	}
 }
 
-func UnleashVariables(server *unleashv1.Unleash) (name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) {
+func UnleashVariables(server *unleashv1.Unleash, returnDefaults bool) (name, customVersion, allowedTeams, allowedNamespaces, allowedClusters string) {
 	name = server.GetName()
 
 	if server.Spec.CustomImage != "" {
 		customVersion = versionFromImage(server.Spec.CustomImage)
 	}
 
-	allowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", name)
-	allowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", name)
-	allowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "prod-gcp,dev-gcp")
+	allowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", name, returnDefaults)
+	allowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", name, returnDefaults)
+	allowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "prod-gcp,dev-gcp", returnDefaults)
 
 	return
 }
