@@ -202,7 +202,7 @@ func UnleashDefinition(
 						To: []networkingv1.NetworkPolicyPeer{{
 							NamespaceSelector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									"kubernetes.io/metadata.name=nais-system": teamsApiNamespace,
+									"kubernetes.io/metadata.name": teamsApiNamespace,
 								},
 							},
 							PodSelector: &metav1.LabelSelector{
