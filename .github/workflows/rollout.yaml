@@ -31,15 +31,20 @@ jobs:
       - id: name
         run: echo "name=${{ github.event.repository.name }}" >> ${GITHUB_OUTPUT}
 
+  wait:
+    name: Wait for workflows
+    runs-on: ubuntu-latest
+    needs: meta
+    steps:
+      - uses: ahmadnassri/action-workflow-run-wait@2aa3d9e1a12ecaaa9908e368eaf2123bb084323e
+
   rollout:
+    name: Rollout to Fasit
     runs-on: fasit-deploy
     permissions:
       id-token: write
-    needs: meta
+    needs: [meta, wait]
     steps:
-      # Wait for all required workflows to complete
-      - uses: ahmadnassri/action-workflow-run-wait@2aa3d9e1a12ecaaa9908e368eaf2123bb084323e
-
       - uses: nais/fasit-deploy@v2
         with:
           chart: oci://${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}/${{ needs.meta.outputs.name }}
