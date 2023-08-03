@@ -21,17 +21,15 @@
 <div class="ui relaxed divided list">
   {{ range .instances }}
   <div class="item">
-    {{ if not .IsReady }}
     <div class="right floated content">
       <div class="ui {{ .StatusLabel }} label">
         <i class="exclamation triangle icon"></i> {{ .Status }}
       </div>
     </div>
-    {{ end }}
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">
       <a class="header" href="{{ .Name }}">{{ .Name }}</a>
-      <div class="description">{{ .CreatedAt }}</div>
+      <div class="description">Created {{ .Age }}</div>
     </div>
   </div>
   {{ end }}
