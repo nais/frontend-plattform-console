@@ -254,7 +254,7 @@ func TestUnleashSpec(t *testing.T) {
 						To: []networkingv1.NetworkPolicyPeer{{
 							NamespaceSelector: &metav1.LabelSelector{
 								MatchLabels: map[string]string{
-									"kubernetes.io/metadata.name=nais-system": "nais-system",
+									"kubernetes.io/metadata.name": "nais-system",
 								},
 							},
 							PodSelector: &metav1.LabelSelector{
