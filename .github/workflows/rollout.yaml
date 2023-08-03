@@ -37,6 +37,9 @@ jobs:
       id-token: write
     needs: meta
     steps:
+      # Wait for all required workflows to complete
+      - uses: ahmadnassri/action-workflow-run-wait@2aa3d9e1a12ecaaa9908e368eaf2123bb084323e
+
       - uses: nais/fasit-deploy@v2
         with:
           chart: oci://${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}/${{ needs.meta.outputs.name }}
