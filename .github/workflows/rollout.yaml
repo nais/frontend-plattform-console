@@ -37,6 +37,8 @@ jobs:
     needs: meta
     steps:
       - uses: ahmadnassri/action-workflow-run-wait@2aa3d9e1a12ecaaa9908e368eaf2123bb084323e
+        with:
+          timeout: 300000 # 5 minutes in milliseconds
 
   rollout:
     name: Rollout to Fasit
