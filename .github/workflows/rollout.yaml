@@ -1,0 +1,44 @@
+name: Fasit Rollout
+on:
+  workflow_run:
+    workflows: [
+      "Helm Chart",
+      "Docker Image"
+    ]
+    branches: [ main ]
+    types:
+      - completed
+
+env:
+  ARTIFACT_REGISTRY: europe-north1-docker.pkg.dev
+  ARTIFACT_REPO: nais-io/nais/feature
+
+jobs:
+  meta:
+    name: Metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      name: ${{ steps.name.outputs.name }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - id: version
+        run: echo "version=$(date +'%Y%m%d-%H%M%S')-$(git rev-parse --short HEAD)" >> ${GITHUB_OUTPUT}
+
+      - id: name
+        run: echo "name=${{ github.event.repository.name }}" >> ${GITHUB_OUTPUT}
+
+  rollout:
+    runs-on: fasit-deploy
+    permissions:
+      id-token: write
+    needs: meta
+    steps:
+      - uses: nais/fasit-deploy@v2
+        with:
+          chart: oci://${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}/${{ needs.meta.outputs.name }}
+          version: ${{ needs.meta.outputs.version }}
+          feature_name: ${{ needs.meta.outputs.name }}

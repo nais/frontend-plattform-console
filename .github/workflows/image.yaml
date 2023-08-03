@@ -1,59 +1,79 @@
-name: Build and deploy image
+name: Container Image
 on:
+  pull_request:
+    branches:
+      - main
   push:
-    paths-ignore:
-      - "charts/**"
+    branches:
+      - main
 
 env:
-  REGISTRY: europe-north1-docker.pkg.dev/nais-io/nais/images
+  ARTIFACT_REGISTRY: europe-north1-docker.pkg.dev
+  ARTIFACT_REPO: nais-io/nais/images
+  SERVICE_ACCOUNT: gh-bifrost@nais-io.iam.gserviceaccount.com
 
 jobs:
-  build_and_push:
-    permissions:
-      contents: "read"
-      id-token: "write"
-    runs-on: ubuntu-latest-16-cores
+  meta:
+    name: Metadata
+    runs-on: ubuntu-latest
     outputs:
       "version": ${{ steps.version.outputs.version }}
+      "name": ${{ steps.name.outputs.name }}
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - id: version
+        run: echo "version=$(date +'%Y%m%d-%H%M%S')-$(git rev-parse --short HEAD)" >> ${GITHUB_OUTPUT}
+
+      - id: name
+        run: echo "name=${{ github.event.repository.name }}" >> ${GITHUB_OUTPUT}
+
+  build_and_push:
+    name: Build and push
+    permissions:
+      contents: read
+      id-token: write
+    runs-on: ubuntu-latest-16-cores
+    needs: meta
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      - name: Generate version
-        id: version
-        run: echo "version=$(date +'%Y%m%d-%H%M%S')-$(git rev-parse --short HEAD)" >> ${GITHUB_OUTPUT}
+
       - id: "auth"
         if: github.actor != 'dependabot[bot]'
         name: "Authenticate to Google Cloud"
         uses: google-github-actions/auth@v1.1.1
         with:
           workload_identity_provider: ${{ secrets.NAIS_IO_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: "gh-bifrost@nais-io.iam.gserviceaccount.com"
+          service_account: ${{ env.SERVICE_ACCOUNT }}
           token_format: "access_token"
+
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v2
+
       - name: Login to registry
         if: github.actor != 'dependabot[bot]'
         uses: docker/login-action@v2
         with:
-          registry: ${{ env.REGISTRY }}
+          registry: ${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}
           username: "oauth2accesstoken"
           password: "${{ steps.auth.outputs.access_token }}"
+
       - name: Docker meta
         id: metadata
         uses: docker/metadata-action@v4
         with:
-          images: ${{ env.REGISTRY }}/bifrost
+          images: ${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}/${{ needs.meta.outputs.name }}
           # Docker tags based on the following events/attributes
           tags: |
             type=schedule
             type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
             type=sha
-            type=raw,value=${{ steps.version.outputs.version }}
+            type=raw,value=${{ needs.meta.outputs.version }}
+
       - name: Build and push
         uses: docker/build-push-action@v4
         with:
@@ -64,14 +84,3 @@ jobs:
           labels: ${{ steps.metadata.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-  rollout:
-    permissions:
-      id-token: write
-    needs: ["build_and_push"]
-    runs-on: fasit-deploy
-    if: github.ref == 'refs/heads/main'
-    steps:
-      - uses: nais/fasit-deploy@main
-        with:
-          json: '{"backend": {"image": {"tag": "${{ needs.build_and_push.outputs.version }}"}}}'
-          feature_name: bifrost
