@@ -44,7 +44,7 @@ jobs:
           cat ./charts/${{ steps.name.outputs.name }}/values.yaml
 
       - name: Save Chart Metadata
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3.1.2
         with:
           name: chart-metadata
           path: |
@@ -61,7 +61,7 @@ jobs:
           fetch-depth: 0
 
       - name: Restore Chart Metadata
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3.0.2
         with:
           name: chart-metadata
           path: ./charts/${{ needs.meta.outputs.name }}
@@ -114,7 +114,7 @@ jobs:
           fetch-depth: 0
 
       - name: Restore Chart Metadata
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3.0.2
         with:
           name: chart-metadata
           path: ./charts/${{ needs.meta.outputs.name }}
