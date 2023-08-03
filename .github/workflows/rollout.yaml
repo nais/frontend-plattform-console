@@ -3,7 +3,7 @@ on:
   workflow_run:
     workflows: [
       "Helm Chart",
-      "Docker Image"
+      "Container Image"
     ]
     branches: [ main ]
     types:
