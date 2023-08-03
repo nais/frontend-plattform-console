@@ -40,7 +40,7 @@ jobs:
 
       - name: Update values.yaml
         run: |
-          sed -i "s/^  tag:.*$/  tag: ${{ steps.version.outputs.version }}/g" ./charts/${{ steps.name.outputs.name }}/values.yaml
+          sed -i "s/^    tag:.*$/    tag: ${{ steps.version.outputs.version }}/g" ./charts/${{ steps.name.outputs.name }}/values.yaml
           cat ./charts/${{ steps.name.outputs.name }}/values.yaml
 
       - name: Save Chart Metadata
