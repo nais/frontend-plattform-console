@@ -36,18 +36,12 @@ jobs:
         run: |
           sed -i "s/^version:.*$/version: ${{ steps.version.outputs.version }}/g" ./charts/${{ steps.name.outputs.name }}/Chart.yaml
           sed -i "s/^appVersion:.*$/appVersion: ${{ steps.version.outputs.version }}/g" ./charts/${{ steps.name.outputs.name }}/Chart.yaml
-
-          if [[ "${{ env.ACTIONS_STEP_DEBUG }}" == "true" ]]; then
-            cat ./charts/${{ steps.name.outputs.name }}/Chart.yaml
-          fi
+          cat ./charts/${{ steps.name.outputs.name }}/Chart.yaml
 
       - name: Update values.yaml
         run: |
           sed -i "s/^  tag:.*$/  tag: ${{ steps.version.outputs.version }}/g" ./charts/${{ steps.name.outputs.name }}/values.yaml
-
-          if [[ "${{ env.ACTIONS_STEP_DEBUG }}" == "true" ]]; then
-            cat ./charts/${{ steps.name.outputs.name }}/values.yaml
-          fi
+          cat ./charts/${{ steps.name.outputs.name }}/values.yaml
 
       - name: Save Chart Metadata
         uses: actions/upload-artifact@v2
