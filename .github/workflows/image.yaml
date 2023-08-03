@@ -14,6 +14,7 @@ env:
 
 jobs:
   meta:
+    name: Metadata
     runs-on: ubuntu-latest
     outputs:
       "version": ${{ steps.version.outputs.version }}
@@ -30,6 +31,7 @@ jobs:
         run: echo "name=${{ github.event.repository.name }}" >> ${GITHUB_OUTPUT}
 
   build_and_push:
+    name: Build and push
     permissions:
       contents: read
       id-token: write
