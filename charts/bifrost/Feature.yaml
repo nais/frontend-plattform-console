@@ -1,0 +1,93 @@
+dependencies:
+  - allOf:
+      - loadbalancer
+      - certificates
+      - monitoring
+
+environmentKinds:
+  - management
+
+values:
+  backend.google.iapBackendServiceId:
+    description: ID for Backend Service for IAP loadbanacer used for verifying JWT tokens from IAP.
+    required: true
+    config:
+      type: string
+  backend.google.projectId:
+    displayName: google project id
+    computed:
+      template: '"{{.Management.project_id}}"'
+  backend.google.projectNumber:
+    displayName: google project number
+    computed:
+      template: '"{{.Management.bifrost_google_project_number }}"'
+  backend.google.serviceAccountEmail:
+    displayName: google service account Email
+    computed:
+      template: '"{{.Management.bifrost_sa}}"'
+  backend.image.tag:
+    config:
+      type: string
+  backend.teams.apiToken:
+    displayName: Teams API key for Bifrost backend
+    computed:
+      template: '"{{ .Management.bifrost_teams_api_key }}"'
+  backend.unleash.apiIngressClass:
+    displayName: Api Ingress Class
+    computed:
+      template: '"nais-ingress"'
+  backend.unleash.apiIngressHost:
+    displayName: Api Ingress Host
+    computed:
+      template: '"{{ subdomain . "unleash-api" }}"'
+  backend.unleash.googleServiceAccountEmail:
+    displayName: Biforst unleash Google service account email
+    computed:
+      template: '"{{ .Management.bifrost_unleash_sql_gsa_email }}"'
+  backend.unleash.instanceNamespace:
+    displayName: Unleash instance namespace
+    computed:
+      template: '"{{ .Management.bifrost_unleash_namespace}}"'
+  backend.unleash.kubernetesServiceAccountName:
+    displayName: Bifrost kubernetes service account name
+    computed:
+      template: '"{{ .Management.bifrost_unleash_sql_ksa_name }}"'
+  backend.unleash.sqlInstanceAddress:
+    displayName: Unleash sql instance address
+    computed:
+      template: '"{{ .Management.bifrost_unleash_sql_instance_address }}"'
+  backend.unleash.sqlInstanceId:
+    displayName: Unleash sql instance id
+    computed:
+      template: '"{{.Management.bifrost_unleash_sql_instance_id}}"'
+  backend.unleash.sqlInstanceRegion:
+    displayName: Unleash sql instance region
+    computed:
+      template: '"{{ .Management.bifrost_unleash_sql_instance_region }}"'
+  backend.unleash.teamsApiToken:
+    displayName: Teams API key for Unleash instances
+    computed:
+      template: '"{{ .Management.unleash_teams_api_key }}"'
+  backend.unleash.webIngressClass:
+    displayName: Web Ingress Class
+    computed:
+      template: '"nais-ingress-iap"'
+  backend.unleash.webIngressHost:
+    displayName: Web Ingress Host
+    computed:
+      template: '"{{ subdomain . "unleash-web" }}"'
+  ingress.host:
+    displayName: Ingress URL
+    computed:
+      template: '"{{ subdomain . "bifrost" }}"'
+  networkPolicy.allowDNS:
+    computed:
+      template: "true"
+  networkPolicy.apiServerCIDR:
+    computed:
+      template: '"{{ .Env.apiserver_endpoint }}/32"'
+    ignoreKind:
+      - onprem
+  networkPolicy.enabled:
+    computed:
+      template: '{{ne .Kind "onprem"}}'
