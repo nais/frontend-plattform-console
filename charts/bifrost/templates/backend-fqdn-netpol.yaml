@@ -20,6 +20,7 @@ spec:
     to:
     - fqdns:
       - private.googleapis.com
+      - api.github.com
   podSelector:
     matchLabels:
       {{- include "bifrost.selectorLabels" . | nindent 6 }}
