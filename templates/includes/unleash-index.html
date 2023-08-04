@@ -22,9 +22,7 @@
   {{ range .instances }}
   <div class="item">
     <div class="right floated content">
-      <div class="ui {{ .StatusLabel }} label">
-        <i class="exclamation triangle icon"></i> {{ .Status }}
-      </div>
+      <div class="ui {{ .StatusLabel }} label">{{ .Status }}</div>
     </div>
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">

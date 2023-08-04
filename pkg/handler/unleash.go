@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/nais/bifrost/pkg/github"
 	"github.com/nais/bifrost/pkg/unleash"
 	"github.com/nais/bifrost/pkg/utils"
 )
@@ -47,6 +48,12 @@ func (h *Handler) UnleashIndex(c *gin.Context) {
 }
 
 func (h *Handler) UnleashNew(c *gin.Context) {
+	unleashVersions, err := github.UnleashVersions()
+	if err != nil {
+		h.logger.WithError(err).Error("Error getting Unleash versions from Github")
+		unleashVersions = []github.UnleashVersion{}
+	}
+
 	obj := unleash.UnleashDefinition(h.config, &unleash.UnleashConfig{Name: "my-unleash"})
 	yamlString, err := utils.StructToYaml(obj)
 	if err != nil {
@@ -58,6 +65,7 @@ func (h *Handler) UnleashNew(c *gin.Context) {
 		"title":           "New Unleash Instance",
 		"action":          "create",
 		"customImageName": unleash.UnleashCustomImageName,
+		"unleashVersions": unleashVersions,
 		"logLevel":        "warn",
 		"yaml":            yamlString,
 	})
@@ -131,12 +139,19 @@ func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 
 	uc := unleash.UnleashVariables(instance.ServerInstance, true)
 
+	unleashVersions, err := github.UnleashVersions()
+	if err != nil {
+		h.logger.WithError(err).Error("Error getting Unleash versions from Github")
+		unleashVersions = []github.UnleashVersion{}
+	}
+
 	c.HTML(200, "unleash-form.html", gin.H{
 		"title":             "Edit Unleash: " + instance.Name,
 		"action":            "edit",
 		"name":              uc.Name,
 		"customImageName":   unleash.UnleashCustomImageName,
 		"customVersion":     uc.CustomVersion,
+		"unleashVersions":   unleashVersions,
 		"allowedTeams":      uc.AllowedTeams,
 		"allowedNamespaces": uc.AllowedNamespaces,
 		"allowedClusters":   uc.AllowedClusters,
@@ -195,16 +210,23 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	loglevelError := !loglevelValidator.MatchString(uc.LogLevel)
 
 	if nameError || customVersionError || allowedTeamsError || allowedNamespacesError || allowedClustersError || loglevelError {
+		unleashVersions, err := github.UnleashVersions()
+		if err != nil {
+			h.logger.WithError(err).Error("Error getting Unleash versions from Github")
+			unleashVersions = []github.UnleashVersion{}
+		}
+
 		c.HTML(400, "unleash-form.html", gin.H{
 			"title":                  title,
 			"action":                 action,
 			"name":                   name,
 			"customVersion":          uc.CustomVersion,
+			"unleashVersions":        unleashVersions,
 			"customImageName":        unleash.UnleashCustomImageName,
 			"allowedTeams":           uc.AllowedTeams,
 			"allowedNamespaces":      uc.AllowedNamespaces,
 			"allowedClusters":        uc.AllowedClusters,
-			"debugLevel":             uc.LogLevel,
+			"logLevel":               uc.LogLevel,
 			"nameError":              nameError,
 			"customVersionError":     customVersionError,
 			"allowedTeamsError":      allowedTeamsError,

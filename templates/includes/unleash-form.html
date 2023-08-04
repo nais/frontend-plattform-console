@@ -24,9 +24,16 @@
       </div>
       <div class="version field{{ if .customVersionError }} error{{ end }}">
         <label>Custom Version</label>
-        <div class="ui labeled input">
-          <div class="ui label">{{ .customImageName }}:</div>
-          <input name="custom-version" type="text" value="{{ .customVersion }}" placeholder="1.2.3">
+
+        <div class="ui fluid search selection clearable dropdown">
+          <input name="custom-version" type="hidden" value="{{ .customVersion }}">
+          <i class="dropdown icon"></i>
+          <div class="default text">Latest Versions</div>
+          <div class="menu">
+            {{ range .unleashVersions }}
+            <div class="item" data-value="{{ .GitTag }}">{{ .GitTag }}</div>
+            {{ end }}
+          </div>
         </div>
       </div>
     </div>
