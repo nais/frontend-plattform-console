@@ -23,6 +23,7 @@ spec:
       protocol: UDP
     - port: 53
       protocol: TCP
+  {{- end }}
   # GitHub API
   - to:
     - ipBlock:
@@ -32,8 +33,6 @@ spec:
     ports:
     - port: 443
       protocol: TCP
-   u
-  {{- end }}
   podSelector:
     matchLabels:
       {{- include "bifrost.selectorLabels" . | nindent 6 }}
