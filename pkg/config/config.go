@@ -56,6 +56,14 @@ type Config struct {
 	CloudConnectorProxy string `env:"BIFROST_CLOUD_CONNECTOR_PROXY_IMAGE,default=gcr.io/cloud-sql-connectors/cloud-sql-proxy:2.1.0"`
 }
 
+func (c *Config) GoogleProjectURL(path string) string {
+	if path == "" {
+		path = "home/dashboard"
+	}
+
+	return fmt.Sprintf("https://console.cloud.google.com/%s?project=%s", path, c.Google.ProjectID)
+}
+
 func (c *Config) GoogleIAPAudience() string {
 	return fmt.Sprintf("/projects/%s/global/backendServices/%s", c.Google.ProjectNumber, c.Google.IAPBackendServiceID)
 }
