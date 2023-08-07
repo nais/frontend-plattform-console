@@ -155,18 +155,14 @@
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">
-        {{ .googleProjectID }}
-      </div>
+      <a class="ui label" href="{{ .googleProjectURL }}">{{ .googleProjectID }}</a>
     </div>
     <!--<i class="large database middle aligned icon"></i>-->
     <div class="content">Google Cloud Project</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">
-        {{ .sqlInstanceID }}
-      </div>
+      <a class="ui label" href="{{ .sqlInstanceURL }}">{{ .sqlInstanceID }}</a>
     </div>
     <!--<i class="large database middle aligned icon"></i>-->
     <div class="content">Database Instance</div>
