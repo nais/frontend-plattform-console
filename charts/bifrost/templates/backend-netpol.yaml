@@ -19,11 +19,20 @@ spec:
         matchLabels:
           k8s-app: node-local-dns
     ports:
-      - port: 53
-        protocol: UDP
-      - port: 53
-        protocol: TCP
+    - port: 53
+      protocol: UDP
+    - port: 53
+      protocol: TCP
   {{- end }}
+  # GitHub API
+  - to:
+    - ipBlock:
+        cidr: 140.82.121.5/32
+    - ipBlock:
+        cidr: 140.82.121.6/32
+    ports:
+    - port: 443
+      protocol: TCP
   podSelector:
     matchLabels:
       {{- include "bifrost.selectorLabels" . | nindent 6 }}
