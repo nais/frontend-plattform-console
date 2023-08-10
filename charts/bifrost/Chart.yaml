@@ -4,5 +4,7 @@ description: Bifrost Frontend Plattform Portal
 maintainers:
   - email: "nais@nav.no"
     name: "nais"
+sources:
+  - https://github.com/nais/bifrost/tree/master/charts/bifrost
 type: application
 version: 0.0.0
