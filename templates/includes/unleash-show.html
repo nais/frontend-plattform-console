@@ -37,6 +37,19 @@
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
+      {{ if .unleashEnableFederation }}
+        <span class="ui label">Enabled</span>
+      {{ else }}
+      <div class="ui orange label">
+        <i class="exclamation triangle icon"></i> Disabled
+      </div>
+      {{ end }}
+    </div>
+    <!--<i class="large code middle aligned icon"></i>-->
+    <div class="content">Federation Enabled</div>
+  </div>
+  <div class="item">
+    <div class="right floated content">
       {{ if len .unleashAllowedTeams }}
       {{ range $index, $element := .unleashAllowedTeams }}
         <span class="ui label">{{ $element }}</span>

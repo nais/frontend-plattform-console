@@ -3,10 +3,10 @@ package unleash
 import (
 	"context"
 	"fmt"
-	"time"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/utils"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	admin "google.golang.org/api/sqladmin/v1beta4"
 	corev1 "k8s.io/api/core/v1"
@@ -35,41 +35,8 @@ func NewUnleashInstance(serverInstance *unleashv1.Unleash) *UnleashInstance {
 	}
 }
 
-func humanReadableAge(age metav1.Time) string {
-	now := time.Now()
-	diff := now.Sub(age.Time)
-
-	if diff.Hours() < 24 {
-		return "less than a day"
-	} else if diff.Hours() < 24*7 {
-		days := int(diff.Hours() / 24)
-		if days == 1 {
-			return "1 day"
-		}
-		return fmt.Sprintf("%d days", days)
-	} else if diff.Hours() < 24*30 {
-		weeks := int(diff.Hours() / 24 / 7)
-		if weeks == 1 {
-			return "1 week"
-		}
-		return fmt.Sprintf("%d weeks", weeks)
-	} else if diff.Hours() < 24*365 {
-		months := int(diff.Hours() / 24 / 30)
-		if months == 1 {
-			return "1 month"
-		}
-		return fmt.Sprintf("%d months", months)
-	} else {
-		years := int(diff.Hours() / 24 / 365)
-		if years == 1 {
-			return "1 year"
-		}
-		return fmt.Sprintf("%d years", years)
-	}
-}
-
 func (u UnleashInstance) Age() string {
-	return humanReadableAge(u.CreatedAt)
+	return utils.HumanReadableAge(u.CreatedAt)
 }
 
 func (u *UnleashInstance) ApiUrl() string {
@@ -142,19 +109,25 @@ func getServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string
 	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: kubeNamespace}}
 	err := kubeClient.Get(ctx, ctrl.ObjectKeyFromObject(&unleashDefinition), &unleashDefinition)
 	if err != nil {
-		return nil, err
+		return nil, &UnleashError{Err: err, Reason: "failed to get server instance"}
 	}
 	return &unleashDefinition, nil
 }
 
 func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
 	unleashDefinition := unleashv1.Unleash{ObjectMeta: metav1.ObjectMeta{Name: name, Namespace: kubeNamespace}}
-	return kubeClient.Delete(ctx, &unleashDefinition)
+	if err := kubeClient.Delete(ctx, &unleashDefinition); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to delete server instance"}
+	}
+	return nil
 }
 
 func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) error {
 	unleashDefinition := UnleashDefinition(config, uc)
-	return kubeClient.Create(ctx, &unleashDefinition)
+	if err := kubeClient.Create(ctx, &unleashDefinition); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to create server instance"}
+	}
+	return nil
 }
 
 func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) error {
@@ -166,26 +139,35 @@ func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Co
 	unleashDefinitionNew := UnleashDefinition(config, uc)
 	unleashDefinitionNew.ObjectMeta.ResourceVersion = unleashDefinitionOld.ObjectMeta.ResourceVersion
 
-	return kubeClient.Update(ctx, &unleashDefinitionNew)
+	if err := kubeClient.Update(ctx, &unleashDefinitionNew); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to update server instance"}
+	}
+
+	return nil
 }
 
 func getFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) (*fqdnV1alpha3.FQDNNetworkPolicy, error) {
 	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-fqdn", name), Namespace: kubeNamespace}}
-	err := kubeClient.Get(ctx, ctrl.ObjectKeyFromObject(&fqdn), &fqdn)
-	if err != nil {
-		return nil, err
+	if err := kubeClient.Get(ctx, ctrl.ObjectKeyFromObject(&fqdn), &fqdn); err != nil {
+		return nil, &UnleashError{Err: err, Reason: "failed to get fqdn network policy"}
 	}
 	return &fqdn, nil
 }
 
 func deleteFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
 	fqdn := fqdnV1alpha3.FQDNNetworkPolicy{ObjectMeta: metav1.ObjectMeta{Name: fmt.Sprintf("%s-fqdn", name), Namespace: kubeNamespace}}
-	return kubeClient.Delete(ctx, &fqdn)
+	if err := kubeClient.Delete(ctx, &fqdn); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to delete fqdn network policy"}
+	}
+	return nil
 }
 
 func createFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
 	fqdn := FQDNNetworkPolicyDefinition(name, kubeNamespace)
-	return kubeClient.Create(ctx, &fqdn)
+	if err := kubeClient.Create(ctx, &fqdn); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to create fqdn network policy"}
+	}
+	return nil
 }
 
 func updateFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) error {
@@ -197,5 +179,9 @@ func updateFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNa
 	fqdnNew := FQDNNetworkPolicyDefinition(name, kubeNamespace)
 	fqdnNew.ObjectMeta.ResourceVersion = fqdnOld.ObjectMeta.ResourceVersion
 
-	return kubeClient.Update(ctx, &fqdnNew)
+	if kubeClient.Update(ctx, &fqdnNew); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to update fqdn network policy"}
+	}
+
+	return nil
 }
