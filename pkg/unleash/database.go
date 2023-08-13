@@ -18,7 +18,7 @@ func createDatabase(ctx context.Context, client ISQLDatabasesService, projectNam
 
 	_, err := client.Insert(projectName, instanceName, database).Context(ctx).Do()
 	if err != nil {
-		return database, err
+		return database, &UnleashError{Err: err, Reason: "failed to create database"}
 	}
 
 	return database, nil
@@ -27,7 +27,7 @@ func createDatabase(ctx context.Context, client ISQLDatabasesService, projectNam
 func getDatabaseUser(ctx context.Context, client ISQLUsersService, projectName, instanceName, databaseName string) (*admin.User, error) {
 	user, err := client.Get(projectName, instanceName, databaseName).Context(ctx).Do()
 	if err != nil {
-		return user, err
+		return user, &UnleashError{Err: err, Reason: "failed to get database user"}
 	}
 
 	return user, nil
@@ -46,7 +46,7 @@ func createDatabaseUser(ctx context.Context, client ISQLUsersService, projectNam
 
 	_, err = client.Insert(projectName, instanceName, user).Context(ctx).Do()
 	if err != nil {
-		return user, err
+		return user, &UnleashError{Err: err, Reason: "failed to create database user"}
 	}
 
 	return user, nil
@@ -55,7 +55,7 @@ func createDatabaseUser(ctx context.Context, client ISQLUsersService, projectNam
 func deleteDatabaseUser(ctx context.Context, client ISQLUsersService, projectName, instanceName, databaseName string) error {
 	_, err := client.Delete(projectName, instanceName).Name(databaseName).Context(ctx).Do()
 	if err != nil {
-		return err
+		return &UnleashError{Err: err, Reason: "failed to delete database user"}
 	}
 
 	return nil
@@ -76,7 +76,7 @@ func randomPassword(length int) (string, error) {
 func getDatabase(ctx context.Context, client ISQLDatabasesService, projectName, instanceName, databaseName string) (*admin.Database, error) {
 	database, err := client.Get(projectName, instanceName, databaseName).Do()
 	if err != nil {
-		return nil, err
+		return database, &UnleashError{Err: err, Reason: "failed to get database"}
 	}
 
 	return database, nil
@@ -85,7 +85,7 @@ func getDatabase(ctx context.Context, client ISQLDatabasesService, projectName, 
 func deleteDatabase(ctx context.Context, client ISQLDatabasesService, projectName, instanceName, databaseName string) error {
 	_, err := client.Delete(projectName, instanceName, databaseName).Do()
 	if err != nil {
-		return err
+		return &UnleashError{Err: err, Reason: "failed to delete database"}
 	}
 
 	return nil
@@ -109,8 +109,11 @@ func createDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace
 		},
 	}
 
-	err := client.Create(ctx, secret)
-	return err
+	if err := client.Create(ctx, secret); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to create database user secret"}
+	}
+
+	return nil
 }
 
 func deleteDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace string, databaseName string) error {
@@ -124,5 +127,10 @@ func deleteDatabaseUserSecret(ctx context.Context, client ctrl.Client, namespace
 			APIVersion: "v1",
 		},
 	}
-	return client.Delete(ctx, secret)
+
+	if err := client.Delete(ctx, secret); err != nil {
+		return &UnleashError{Err: err, Reason: "failed to delete database user secret"}
+	}
+
+	return nil
 }

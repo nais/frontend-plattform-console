@@ -6,6 +6,7 @@ import (
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/utils"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
@@ -109,6 +110,8 @@ func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string, retur
 type UnleashConfig struct {
 	Name              string
 	CustomVersion     string
+	EnableFederation  bool
+	FederationNonce   string
 	AllowedTeams      string
 	AllowedNamespaces string
 	AllowedClusters   string
@@ -125,9 +128,10 @@ func UnleashVariables(server *unleashv1.Unleash, returnDefaults bool) *UnleashCo
 	}
 
 	uc.AllowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", uc.Name, returnDefaults)
-	uc.AllowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", uc.Name, returnDefaults)
-	uc.AllowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "prod-gcp,dev-gcp", returnDefaults)
 	uc.LogLevel = getServerEnvVar(server, "LOG_LEVEL", "warn", returnDefaults)
+	uc.EnableFederation = server.Spec.Federation.Enabled
+	uc.AllowedNamespaces = utils.JoinNoEmpty(server.Spec.Federation.Namespaces, ",")
+	uc.AllowedClusters = utils.JoinNoEmpty(server.Spec.Federation.Clusters, ",")
 
 	return uc
 }
@@ -145,6 +149,11 @@ func UnleashDefinition(
 	teamsApiName := "teams-backend"
 
 	googleIapAudience := c.GoogleIAPAudience()
+
+	federationNonce := uc.FederationNonce
+	if federationNonce == "" {
+		federationNonce = utils.RandomString(16)
+	}
 
 	server := unleashv1.Unleash{
 		TypeMeta: metav1.TypeMeta{
@@ -213,6 +222,12 @@ func UnleashDefinition(
 						}},
 					},
 				},
+			},
+			Federation: unleashv1.UnleashFederationConfig{
+				Enabled:     uc.EnableFederation,
+				Namespaces:  utils.SplitNoEmpty(uc.AllowedNamespaces, ","),
+				Clusters:    utils.SplitNoEmpty(uc.AllowedClusters, ","),
+				SecretNonce: federationNonce,
 			},
 			ExtraEnvVars: []corev1.EnvVar{{
 				Name:  "GOOGLE_IAP_AUDIENCE",

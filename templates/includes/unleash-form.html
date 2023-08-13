@@ -39,6 +39,14 @@
     </div>
   </div>
 
+  <div class="federation field">
+    <label>Enable Federation</label>
+    <div class="ui toggle checkbox">
+      <input name="enable-federation" type="checkbox" value="on"{{ if .enableFederation }} checked{{ end }}>
+      <label>Enable federation to allowed clusters and namespaces</label>
+    </div>
+  </div>
+
   <div class="teams field{{ if .allowedTeamsError }} error{{ end }}">
     <label>Allowed Teams</label>
     <div class="ui fluid multiple search selection dropdown">

@@ -200,7 +200,7 @@ func TestUnleashSpec(t *testing.T) {
 	teamsApiPort := intstr.FromInt(3000)
 
 	t.Run("default values", func(t *testing.T) {
-		a := UnleashDefinition(&c, &UnleashConfig{Name: "my-instance"})
+		a := UnleashDefinition(&c, &UnleashConfig{Name: "my-instance", FederationNonce: "my-nonce"})
 		b := unleashv1.Unleash{
 			TypeMeta: metav1.TypeMeta{
 				Kind:       "Unleash",
@@ -264,6 +264,12 @@ func TestUnleashSpec(t *testing.T) {
 							},
 						}},
 					}},
+				},
+				Federation: unleashv1.UnleashFederationConfig{
+					Enabled:     false,
+					Clusters:    []string{},
+					Namespaces:  []string{},
+					SecretNonce: "my-nonce",
 				},
 				ExtraEnvVars: []corev1.EnvVar{{
 					Name:  "GOOGLE_IAP_AUDIENCE",

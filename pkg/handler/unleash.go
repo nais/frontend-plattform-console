@@ -1,10 +1,10 @@
 package handler
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"regexp"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/github"
@@ -89,21 +89,6 @@ func (h *Handler) UnleashInstanceMiddleware(c *gin.Context) {
 	c.Next()
 }
 
-func splitNoEmpty(s, sep string) []string {
-	if s == "" {
-		return []string{}
-	}
-
-	res := strings.Split(s, sep)
-	for i := 0; i < len(res); i++ {
-		if res[i] == "" {
-			res = append(res[:i], res[i+1:]...)
-		}
-	}
-
-	return res
-}
-
 func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 	instance := c.MustGet("unleashInstance").(*unleash.UnleashInstance)
 	instanceYaml, err := utils.StructToYaml(instance.ServerInstance)
@@ -118,9 +103,10 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 		"title":                    "Unleash: " + instance.Name,
 		"instance":                 instance,
 		"unleashCustomVersion":     uc.CustomVersion,
-		"unleashAllowedTeams":      splitNoEmpty(uc.AllowedTeams, ","),
-		"unleashAllowedNamespaces": splitNoEmpty(uc.AllowedNamespaces, ","),
-		"unleashAllowedClusters":   splitNoEmpty(uc.AllowedClusters, ","),
+		"unleashEnableFederation":  uc.EnableFederation,
+		"unleashAllowedTeams":      utils.SplitNoEmpty(uc.AllowedTeams, ","),
+		"unleashAllowedNamespaces": utils.SplitNoEmpty(uc.AllowedNamespaces, ","),
+		"unleashAllowedClusters":   utils.SplitNoEmpty(uc.AllowedClusters, ","),
 		"unleashLogLevel":          uc.LogLevel,
 		"googleProjectID":          h.config.Google.ProjectID,
 		"googleProjectURL":         h.config.GoogleProjectURL(""),
@@ -154,6 +140,7 @@ func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 		"customImageName":   unleash.UnleashCustomImageName,
 		"customVersion":     uc.CustomVersion,
 		"unleashVersions":   unleashVersions,
+		"enableFederation":  uc.EnableFederation,
 		"allowedTeams":      uc.AllowedTeams,
 		"allowedNamespaces": uc.AllowedNamespaces,
 		"allowedClusters":   uc.AllowedClusters,
@@ -163,8 +150,8 @@ func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 
 func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	var (
-		name, title, action string
-		err                 error
+		name, title, action, nonce string
+		err                        error
 	)
 
 	ctx := c.Request.Context()
@@ -185,6 +172,8 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		name = instance.Name
 		title = "Edit Unleash: " + name
 		action = "edit"
+
+		nonce = instance.ServerInstance.Spec.Federation.SecretNonce
 	} else {
 		name = c.PostForm("name")
 		title = "New Unleash Instance"
@@ -194,6 +183,8 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	uc := &unleash.UnleashConfig{
 		Name:              name,
 		CustomVersion:     c.PostForm("custom-version"),
+		EnableFederation:  c.PostForm("enable-federation") == "on",
+		FederationNonce:   nonce,
 		AllowedTeams:      c.PostForm("allowed-teams"),
 		AllowedNamespaces: c.PostForm("allowed-namespaces"),
 		AllowedClusters:   c.PostForm("allowed-clusters"),
@@ -225,6 +216,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 			"customVersion":          uc.CustomVersion,
 			"unleashVersions":        unleashVersions,
 			"customImageName":        unleash.UnleashCustomImageName,
+			"enableFederation":       uc.EnableFederation,
 			"allowedTeams":           uc.AllowedTeams,
 			"allowedNamespaces":      uc.AllowedNamespaces,
 			"allowedClusters":        uc.AllowedClusters,
@@ -247,9 +239,17 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	}
 
 	if err != nil {
+		var unleashErr *unleash.UnleashError
+
+		reason := "Error persisting Unleash instance, check server logs"
+		if errors.As(err, &unleashErr) {
+			err = unleashErr.Err
+			reason = fmt.Sprintf("Error persisting Unleash instance, %s", unleashErr.Reason)
+		}
+
 		c.Error(err).
 			SetType(gin.ErrorTypePublic).
-			SetMeta("Error persisting Unleash instance, check server logs")
+			SetMeta(reason)
 		return
 	}
 
