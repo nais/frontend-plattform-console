@@ -152,7 +152,7 @@ func UnleashDefinition(
 
 	federationNonce := uc.FederationNonce
 	if federationNonce == "" {
-		federationNonce = utils.RandomString(16)
+		federationNonce = utils.RandomString(8)
 	}
 
 	server := unleashv1.Unleash{
