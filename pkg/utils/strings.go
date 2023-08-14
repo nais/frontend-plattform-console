@@ -29,7 +29,7 @@ func JoinNoEmpty(s []string, sep string) string {
 }
 
 func RandomString(n int) string {
-	const letterBytes = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	const letterBytes = "abcdefghijklmnopqrstuvwxyz0123456789"
 
 	b := make([]byte, n)
 	for i := range b {
