@@ -189,6 +189,8 @@ github.com/nais/unleasherator v0.0.0-20230727063805-e0c7ab0a2aec h1:5j/yMZYAI/b0
 github.com/nais/unleasherator v0.0.0-20230727063805-e0c7ab0a2aec/go.mod h1:5xpLAVnoZKS3Q1W2yO3uiN/NxyEGsQGO45EyD4A3+ps=
 github.com/nais/unleasherator v0.0.0-20230811145455-4d3be96b95da h1:ep6ViSQ9rbbEODrZvFSXIooJjd9yT8A4vZcd2qbL7fw=
 github.com/nais/unleasherator v0.0.0-20230811145455-4d3be96b95da/go.mod h1:W1/Osy5NqTdCLEyBoj0K32aaGkBTFdonmn+OaTLjBKQ=
+github.com/nais/unleasherator v0.0.0-20230815090712-4dce844ebec6 h1:YGgT98UqNbfF/Ds1kfuwVm+LPYzjurrvY+NVjfkgQE4=
+github.com/nais/unleasherator v0.0.0-20230815090712-4dce844ebec6/go.mod h1:p87AJrl9vWYyX6paFdI32UjMvYyH6lPxpGFvJ1YPqNo=
 github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e/go.mod h1:zD1mROLANZcx1PVRCS0qkT7pwLkGfwJo4zjcN/Tysno=
 github.com/nxadm/tail v1.4.8 h1:nPr65rt6Y5JFSKQO7qToXr7pePgD6Gwiw05lkbyAQTE=
 github.com/nxadm/tail v1.4.8/go.mod h1:+ncqLTQzXmGhMZNUePPaPqPvBxHAIsmXswZKocGu+AU=
