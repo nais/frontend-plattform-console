@@ -138,6 +138,9 @@ func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Co
 
 	unleashDefinitionNew := UnleashDefinition(config, uc)
 	unleashDefinitionNew.ObjectMeta.ResourceVersion = unleashDefinitionOld.ObjectMeta.ResourceVersion
+	unleashDefinitionNew.ObjectMeta.CreationTimestamp = unleashDefinitionOld.ObjectMeta.CreationTimestamp
+	unleashDefinitionNew.ObjectMeta.Generation = unleashDefinitionOld.ObjectMeta.Generation
+	unleashDefinitionNew.ObjectMeta.UID = unleashDefinitionOld.ObjectMeta.UID
 
 	if err := kubeClient.Update(ctx, &unleashDefinitionNew); err != nil {
 		return &UnleashError{Err: err, Reason: "failed to update server instance"}
@@ -178,6 +181,9 @@ func updateFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNa
 
 	fqdnNew := FQDNNetworkPolicyDefinition(name, kubeNamespace)
 	fqdnNew.ObjectMeta.ResourceVersion = fqdnOld.ObjectMeta.ResourceVersion
+	fqdnNew.ObjectMeta.CreationTimestamp = fqdnOld.ObjectMeta.CreationTimestamp
+	fqdnNew.ObjectMeta.Generation = fqdnOld.ObjectMeta.Generation
+	fqdnNew.ObjectMeta.UID = fqdnOld.ObjectMeta.UID
 
 	if kubeClient.Update(ctx, &fqdnNew); err != nil {
 		return &UnleashError{Err: err, Reason: "failed to update fqdn network policy"}
