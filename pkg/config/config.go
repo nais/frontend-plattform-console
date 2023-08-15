@@ -4,12 +4,48 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 	"github.com/sethvargo/go-envconfig"
 	"github.com/spf13/cobra"
 )
+
+type MetaConfig struct {
+	Version string `env:"BIFROST_VERSION,default=unknown"`
+	Repo    string `env:"BIFROST_REPO,default=nais/bifrost"`
+}
+
+func (m *MetaConfig) Commit() string {
+	split := strings.Split(m.Version, "-")
+	if len(split) == 2 {
+		return split[1]
+	}
+
+	return "unknown"
+}
+
+func (m *MetaConfig) BuildDate() string {
+	split := strings.Split(m.Version, "-")
+	if len(split) == 2 {
+		return split[0]
+	}
+
+	return "unknown"
+}
+
+func (m *MetaConfig) RepoUrl() string {
+	return fmt.Sprintf("https://github.com/%s", m.Repo)
+}
+
+func (m *MetaConfig) CommitUrl() string {
+	return fmt.Sprintf("%s/commit/%s", m.RepoUrl(), m.Commit())
+}
+
+func (m *MetaConfig) VersionUrl() string {
+	return fmt.Sprintf("%s/releases/tag/%s", m.RepoUrl(), m.Version)
+}
 
 type ServerConfig struct {
 	Port            string `env:"BIFROST_PORT,default=8080"`
@@ -48,6 +84,7 @@ type UnleashConfig struct {
 }
 
 type Config struct {
+	Meta                MetaConfig
 	Server              ServerConfig
 	Google              GoogleConfig
 	Teams               TeamsConfig
