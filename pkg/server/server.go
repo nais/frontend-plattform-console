@@ -81,7 +81,7 @@ func setupRouter(config *config.Config, logger *logrus.Logger, unleashService un
 	router.Use(h.ErrorHandler)
 	router.Static("/assets", "./assets")
 
-	router.HTMLRender = utils.LoadTemplates(config.Server.TemplatesDir)
+	router.HTMLRender = utils.LoadTemplates(config)
 	router.GET("/", func(c *gin.Context) {
 		c.HTML(200, "index.html", gin.H{
 			"title": "Frontend Plattform",

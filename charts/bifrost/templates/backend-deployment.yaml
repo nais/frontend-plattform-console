@@ -45,6 +45,8 @@ spec:
               value: "8080"
             - name: BIFROST_HOST
               value: "0.0.0.0"
+            - name: BIFROST_VERSION
+              value: {{ .Values.backend.image.tag | quote }}
             - name: GIN_MODE
               value: {{ if .Values.backend.debugEnabled }}debug{{ else }}release{{ end }}
             # Google

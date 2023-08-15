@@ -130,8 +130,16 @@ func UnleashVariables(server *unleashv1.Unleash, returnDefaults bool) *UnleashCo
 	uc.AllowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", uc.Name, returnDefaults)
 	uc.LogLevel = getServerEnvVar(server, "LOG_LEVEL", "warn", returnDefaults)
 	uc.EnableFederation = server.Spec.Federation.Enabled
+
 	uc.AllowedNamespaces = utils.JoinNoEmpty(server.Spec.Federation.Namespaces, ",")
+	if uc.AllowedNamespaces == "" {
+		uc.AllowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", "", returnDefaults)
+	}
+
 	uc.AllowedClusters = utils.JoinNoEmpty(server.Spec.Federation.Clusters, ",")
+	if uc.AllowedClusters == "" {
+		uc.AllowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "", returnDefaults)
+	}
 
 	return uc
 }

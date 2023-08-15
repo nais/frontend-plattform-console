@@ -155,6 +155,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	)
 
 	ctx := c.Request.Context()
+	log := h.logger.WithContext(ctx)
 
 	nameValidator := regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
 	versionValidator := regexp.MustCompile(`^[a-zA-Z0-9-_\.+]*$`)
@@ -190,6 +191,9 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		AllowedClusters:   c.PostForm("allowed-clusters"),
 		LogLevel:          c.PostForm("loglevel"),
 	}
+
+	log.Info("Unleash instance form submitted")
+	log.Debug(uc)
 
 	if uc.LogLevel == "" {
 		uc.LogLevel = "warn"
