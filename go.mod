@@ -8,7 +8,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/google/go-cmp v0.5.9
 	github.com/joho/godotenv v1.5.1
-	github.com/nais/unleasherator v0.0.0-20230811145455-4d3be96b95da
+	github.com/nais/unleasherator v0.0.0-20230815090712-4dce844ebec6
 	github.com/sethvargo/go-envconfig v0.9.0
 	github.com/sirupsen/logrus v1.9.3
 	github.com/spf13/cobra v1.7.0
