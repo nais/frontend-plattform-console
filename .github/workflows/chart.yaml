@@ -27,7 +27,7 @@ jobs:
       version: ${{ steps.version.outputs.version }}
       name: ${{ steps.name.outputs.name }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -49,7 +49,7 @@ jobs:
           cat ./charts/${{ steps.name.outputs.name }}/values.yaml
 
       - name: Save Chart Metadata
-        uses: actions/upload-artifact@v3.1.2
+        uses: actions/upload-artifact@v3.1.3
         with:
           name: chart-metadata
           path: |
@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest-16-cores
     needs: meta
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [meta, lint-test]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
