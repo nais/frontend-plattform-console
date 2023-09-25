@@ -33,7 +33,7 @@ func (h *Handler) UnleashIndex(c *gin.Context) {
 	ctx := c.Request.Context()
 	instances, err := h.unleashService.List(ctx)
 	if err != nil {
-		c.Error(err).
+		_ = c.Error(err).
 			SetType(gin.ErrorTypePublic).
 			SetMeta("Error getting unleash instances")
 		return
@@ -166,7 +166,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	if exists {
 		instance, ok := instance.(*unleash.UnleashInstance)
 		if !ok {
-			c.Error(fmt.Errorf("could not convert instance to UnleashInstance"))
+			_ = c.Error(fmt.Errorf("could not convert instance to UnleashInstance"))
 			return
 		}
 
@@ -251,7 +251,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 			reason = fmt.Sprintf("Error persisting Unleash instance, %s", unleashErr.Reason)
 		}
 
-		c.Error(err).
+		_ = c.Error(err).
 			SetType(gin.ErrorTypePublic).
 			SetMeta(reason)
 		return
@@ -285,7 +285,7 @@ func (h *Handler) UnleashInstanceDeletePost(c *gin.Context) {
 	}
 
 	if err := h.unleashService.Delete(ctx, instance.Name); err != nil {
-		c.Error(err).
+		_ = c.Error(err).
 			SetType(gin.ErrorTypePublic).
 			SetMeta("Error deleting unleash instance")
 		return

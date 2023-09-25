@@ -7,10 +7,10 @@ LAST_COMMIT = $(shell git rev-parse --short HEAD)
 LDFLAGS := -X github.com/nais/bifrost/pkg/version.Revision=$(LAST_COMMIT) -X github.com/nais/bifrost/pkg/version.Date=$(DATE) -X github.com/nais/bifrost/pkg/version.BuildUnixTime=$(BUILDTIME)
 
 .PHONY: all
-all: fmt check test bifrost
+all: fmt lint vet check test build
 
-.PHONY: bifrost
-bifrost:
+.PHONY: build
+build:
 	go build -o bin/bifrost -ldflags "-s $(LDFLAGS)" .
 
 .PHONY: test
@@ -25,14 +25,18 @@ start:
 fmt: gofumpt
 	$(GOFUMPT) -w ./
 
+.PHONY: lint
+lint: golangci-lint ## Run golangci-lint against code.
+	$(GOLANGCI_LINT) run
+
+.PHONY: vet
+vet: ## Run go vet against code.
+	go vet ./...
+
 .PHONY: check
 check: staticcheck govulncheck
 	$(STATICCHECK) ./...
 	$(GOVULNCHECK) ./...
-
-.PHONY: alpine
-alpine:
-	go build -a -installsuffix cgo -o bin/bifrost -ldflags "-s $(LDFLAGS)" .
 
 .PHONY: docker
 docker:
@@ -47,6 +51,7 @@ $(LOCALBIN):
 GOVULNCHECK ?= $(LOCALBIN)/govulncheck
 STATICCHECK ?= $(LOCALBIN)/staticcheck
 GOFUMPT ?= $(LOCALBIN)/gofumpt
+GOLANGCI_LINT ?= $(LOCALBIN)/golangci-lint
 
 .PHONY: govulncheck
 govulncheck: $(GOVULNCHECK) ## Download govulncheck locally if necessary.
@@ -62,3 +67,8 @@ $(STATICCHECK): $(LOCALBIN)
 gofumpt: $(GOFUMPT) ## Download gofumpt locally if necessary.
 $(GOFUMPT): $(LOCALBIN)
 	test -s $(LOCALBIN)/gofumpt || GOBIN=$(LOCALBIN) go install mvdan.cc/gofumpt@latest
+
+.PHONY: golangci-lint
+golangci-lint: $(GOLANGCI_LINT) ## Download golangci-lint locally if necessary.
+$(GOLANGCI_LINT): $(LOCALBIN)
+	test -s $(LOCALBIN)/golangci-lint || GOBIN=$(LOCALBIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint

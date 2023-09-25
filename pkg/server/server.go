@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"os"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
@@ -29,33 +30,39 @@ func initGoogleClients(ctx context.Context) (*admin.InstancesService, *admin.Dat
 	return googleClient.Instances, googleClient.Databases, googleClient.Users, nil
 }
 
-func initKubenetesClient() (ctrl.Client, error) {
+func initKubernetesClient() (ctrl.Client, error) {
 	var kubeClient ctrl.Client
-	schema := runtime.NewScheme()
-	fqdnV1alpha3.AddToScheme(schema)
-	unleashv1.AddToScheme(schema)
-	client_go_scheme.AddToScheme(schema)
+	scheme := runtime.NewScheme()
+	if err := fqdnV1alpha3.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add fqdnV1alpha3 to scheme: %w", err)
+	}
+	if err := unleashv1.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add unleashv1 to scheme: %w", err)
+	}
+	if err := client_go_scheme.AddToScheme(scheme); err != nil {
+		return nil, fmt.Errorf("failed to add client_go_scheme to scheme: %w", err)
+	}
 	opts := ctrl.Options{
-		Scheme: schema,
+		Scheme: scheme,
 	}
 	if kubeconfig := os.Getenv("KUBECONFIG"); kubeconfig != "" {
 		config, err := clientcmd.BuildConfigFromFlags("", kubeconfig)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to build config from kubeconfig: %w", err)
 		}
 
 		kubeClient, err = ctrl.New(config, opts)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
 		}
 	} else {
 		config, err := rest.InClusterConfig()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to get in-cluster config: %w", err)
 		}
 		kubeClient, err = ctrl.New(config, opts)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("failed to create kubernetes client: %w", err)
 		}
 	}
 
@@ -113,7 +120,7 @@ func setupRouter(config *config.Config, logger *logrus.Logger, unleashService un
 func Run(config *config.Config) {
 	logger := initLogger()
 
-	kubeClient, err := initKubenetesClient()
+	kubeClient, err := initKubernetesClient()
 	if err != nil {
 		logger.Fatal(err)
 	}
