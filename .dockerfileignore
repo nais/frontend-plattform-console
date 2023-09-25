@@ -1,0 +1,9 @@
+.*
+.*/
+bin/
+charts/
+hack/
+tmp/
+CODEOWNERS
+Dockerfile
+flake.*

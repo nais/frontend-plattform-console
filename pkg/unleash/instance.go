@@ -56,7 +56,11 @@ func (u *UnleashInstance) WebUrl() string {
 }
 
 func (u *UnleashInstance) IsReady() bool {
-	return u.ServerInstance.IsReady()
+	if u.ServerInstance != nil {
+		return u.ServerInstance.IsReady()
+	} else {
+		return false
+	}
 }
 
 func (u *UnleashInstance) Status() string {
@@ -68,6 +72,14 @@ func (u *UnleashInstance) Status() string {
 		}
 	} else {
 		return "Status unknown"
+	}
+}
+
+func (u *UnleashInstance) Version() string {
+	if u.ServerInstance != nil {
+		return u.ServerInstance.Status.Version
+	} else {
+		return "Unknown"
 	}
 }
 
@@ -185,7 +197,7 @@ func updateFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNa
 	fqdnNew.ObjectMeta.Generation = fqdnOld.ObjectMeta.Generation
 	fqdnNew.ObjectMeta.UID = fqdnOld.ObjectMeta.UID
 
-	if kubeClient.Update(ctx, &fqdnNew); err != nil {
+	if err := kubeClient.Update(ctx, &fqdnNew); err != nil {
 		return &UnleashError{Err: err, Reason: "failed to update fqdn network policy"}
 	}
 

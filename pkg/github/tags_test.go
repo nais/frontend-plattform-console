@@ -13,7 +13,7 @@ import (
 func TestUnleashVersions(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == fmt.Sprintf("/repos/%s/%s/tags", unleashRepoOwner, unleashRepoName) {
-			w.Write([]byte(`[
+			_, err := w.Write([]byte(`[
 {
 	"name": "v4.23.4-20230804-081623-e0123bf",
 	"zipball_url": "https://api.github.com/repos/nais/unleash/zipball/refs/tags/v4.23.4-20230804-081623-e0123bf",
@@ -45,6 +45,7 @@ func TestUnleashVersions(t *testing.T) {
 	"node_id": "MDM6UmVmMTE0MjQ0MDc0OnJlZnMvdGFncy82OC4yMDE5MTAwNy4xMjMz"
 }
 ]`))
+			assert.NoError(t, err)
 		} else {
 			w.WriteHeader(http.StatusNotFound)
 		}
@@ -166,7 +167,8 @@ func TestGetLatestTags(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 				if r.URL.Path == fmt.Sprintf("/repos/%s/%s/tags", tc.owner, tc.repo) {
-					w.Write([]byte(tc.response))
+					_, err := w.Write([]byte(tc.response))
+					assert.NoError(t, err)
 				} else {
 					w.WriteHeader(http.StatusNotFound)
 				}
