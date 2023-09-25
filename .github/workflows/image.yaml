@@ -80,8 +80,8 @@ jobs:
           path: ${{ github.workspace }}/bin
           key: ${{ runner.os }}-bin-${{ hashFiles('Makefile', 'go.mod') }}
 
-  build_and_push:
-    name: Build and push
+  docker:
+    name: Build and push Docker image
     permissions:
       contents: read
       id-token: write
