@@ -26,8 +26,8 @@ RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH} go build -a -o bi
 FROM gcr.io/distroless/static:nonroot
 WORKDIR /
 COPY --from=builder /workspace/bifrost .
-COPY --from=builder /workspace/templates .
-COPY --from=builder /workspace/assets .
+COPY --from=builder /workspace/templates ./templates
+COPY --from=builder /workspace/assets ./assets
 USER 65532:65532
 
 ENTRYPOINT ["/bifrost"]
