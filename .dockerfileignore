@@ -4,6 +4,7 @@ bin/
 charts/
 hack/
 tmp/
+tools/
 CODEOWNERS
 Dockerfile
 flake.*
