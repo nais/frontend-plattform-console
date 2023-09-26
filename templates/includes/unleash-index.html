@@ -19,15 +19,15 @@
 
 {{ if .instances }}
 <div class="ui relaxed divided list">
-  {{ range .instances }}
+  {{ range $index, $instance := .instances }}
   <div class="item">
     <div class="right floated content">
-      <div class="ui {{ .StatusLabel }} label">{{ .Status }}</div>
+      <div class="ui {{ $instance.StatusLabel }} label">{{ $instance.Status }}</div>
     </div>
     <i class="large toggle on middle aligned icon"></i>
     <div class="content">
-      <a class="header" href="{{ .Name }}">{{ .Name }}</a>
-      <div class="description">Version {{ .Version }}</div>
+      <a class="header" href="{{ $instance.Name }}">{{ $instance.Name }}</a>
+      <div class="description">Version {{ $instance.Version }}</div>
     </div>
   </div>
   {{ end }}
