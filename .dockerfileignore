@@ -6,4 +6,5 @@ hack/
 tmp/
 tools/
 CODEOWNERS
+Dockerfile
 flake.*
