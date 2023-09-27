@@ -90,9 +90,7 @@ func setupRouter(config *config.Config, logger *logrus.Logger, unleashService un
 
 	router.HTMLRender = utils.LoadTemplates(config)
 	router.GET("/", func(c *gin.Context) {
-		c.HTML(200, "index.html", gin.H{
-			"title": "Frontend Plattform",
-		})
+		c.Redirect(302, "/unleash")
 	})
 
 	router.GET("/healthz", h.HealthHandler)
