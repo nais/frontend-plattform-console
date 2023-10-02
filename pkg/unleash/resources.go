@@ -10,6 +10,7 @@ import (
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	corev1 "k8s.io/api/core/v1"
 	networkingv1 "k8s.io/api/networking/v1"
+	"k8s.io/apimachinery/pkg/api/resource"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/util/intstr"
 )
@@ -17,6 +18,12 @@ import (
 const (
 	UnleashCustomImageRepo = "europe-north1-docker.pkg.dev/nais-io/nais/images/"
 	UnleashCustomImageName = "unleash-v4"
+	UnleashRequestCPU      = "200m"
+	UnleashRequestMemory   = "128Mi"
+	UnleashLimitMemory     = "512Mi"
+	SqlProxyRequestCPU     = "50m"
+	SqlProxyRequestMemory  = "16Mi"
+	SqlProxyLimitMemory    = "56Mi"
 )
 
 func boolRef(b bool) *bool {
@@ -285,9 +292,26 @@ func UnleashDefinition(
 					RunAsNonRoot:             boolRef(true),
 					AllowPrivilegeEscalation: boolRef(false),
 				},
+				Resources: corev1.ResourceRequirements{
+					Requests: corev1.ResourceList{
+						corev1.ResourceCPU:    resource.MustParse(SqlProxyRequestCPU),
+						corev1.ResourceMemory: resource.MustParse(SqlProxyRequestMemory),
+					},
+					Limits: corev1.ResourceList{
+						corev1.ResourceMemory: resource.MustParse(SqlProxyLimitMemory),
+					},
+				},
 			}},
 			ExistingServiceAccountName: c.Unleash.InstanceServiceaccount,
-			Resources:                  corev1.ResourceRequirements{},
+			Resources: corev1.ResourceRequirements{
+				Requests: corev1.ResourceList{
+					corev1.ResourceCPU:    resource.MustParse(UnleashRequestCPU),
+					corev1.ResourceMemory: resource.MustParse(UnleashRequestMemory),
+				},
+				Limits: corev1.ResourceList{
+					corev1.ResourceMemory: resource.MustParse(UnleashLimitMemory),
+				},
+			},
 		},
 	}
 
