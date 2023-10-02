@@ -49,7 +49,6 @@ jobs:
         with:
           chart: oci://${{ env.ARTIFACT_REGISTRY }}/${{ env.ARTIFACT_REPO }}/${{ needs.meta.outputs.name }}
           version: ${{ needs.meta.outputs.version }}
-          feature_name: ${{ needs.meta.outputs.name }}
 
   git-tag:
     runs-on: ubuntu-latest
