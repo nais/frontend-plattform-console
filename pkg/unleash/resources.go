@@ -18,12 +18,12 @@ import (
 const (
 	UnleashCustomImageRepo = "europe-north1-docker.pkg.dev/nais-io/nais/images/"
 	UnleashCustomImageName = "unleash-v4"
-	UnleashRequestCPU      = "200m"
+	UnleashRequestCPU      = "100m"
 	UnleashRequestMemory   = "128Mi"
-	UnleashLimitMemory     = "512Mi"
-	SqlProxyRequestCPU     = "50m"
-	SqlProxyRequestMemory  = "16Mi"
-	SqlProxyLimitMemory    = "56Mi"
+	UnleashLimitMemory     = "256Mi"
+	SqlProxyRequestCPU     = "10m"
+	SqlProxyRequestMemory  = "100Mi"
+	SqlProxyLimitMemory    = "100Mi"
 )
 
 func boolRef(b bool) *bool {
