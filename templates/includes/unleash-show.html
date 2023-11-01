@@ -1,220 +1,220 @@
 {{define "content"}}
 
-<a class="ui {{ .instance.StatusLabel }} label">{{ .instance.Status }}</a>
+<a >{{ .instance.Status }}</a>
 
-<div class="ui grid">
-  <div class="eight wide column">
-    <div class="ui breadcrumb">
-      <a class="section" href="/">Home</a>
-      <div class="divider"> / </div>
-      <a class="section" href="/unleash/">Unleash</a>
-      <div class="divider"> / </div>
-      <div class="active section">{{ .instance.Name }}</div>
+<div >
+  <div >
+    <div >
+      <a  href="/">Home</a>
+      <div > / </div>
+      <a  href="/unleash/">Unleash</a>
+      <div > / </div>
+      <div >{{ .instance.Name }}</div>
     </div>
   </div>
-  <div class="right aligned eight wide column">
-    <div class="mini ui buttons">
-      <a class="ui button" href="./edit"><i class="pencil icon"></i></a>
-      <a class="ui button" href="./delete"><i class="trash icon"></i></a>
+  <div >
+    <div >
+      <a  href="./edit"><i ></i></a>
+      <a  href="./delete"><i ></i></a>
     </div>
   </div>
 </div>
 
-<h5 class="ui top attached header">unleash.yaml</h5>
-<div class="ui attached segment" style="padding: 0;">
+<h5 >unleash.yaml</h5>
+<div  style="padding: 0;">
   <pre
-    style="margin: 0; overflow: scroll; max-height: 250px;"><code class="language-yaml">{{ .instanceYaml }}</code></pre>
+    style="margin: 0; overflow: scroll; max-height: 250px;"><code >{{ .instanceYaml }}</code></pre>
 </div>
 
-<h3 class="ui header">
-  <i class="user icon"></i>
-  <div class="content">
+<h3 >
+  <i ></i>
+  <div >
     Access Control
-    <div class="sub header">Access to Unleash</div>
+    <div >Access to Unleash</div>
   </div>
 </h3>
 
-<div class="ui middle aligned divided list">
-  <div class="item">
-    <div class="right floated content">
+<div >
+  <div >
+    <div >
       {{ if .unleashEnableFederation }}
-        <span class="ui label">Enabled</span>
+        <span >Enabled</span>
       {{ else }}
-      <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> Disabled
+      <div >
+        <i ></i> Disabled
       </div>
       {{ end }}
     </div>
-    <!--<i class="large code middle aligned icon"></i>-->
-    <div class="content">Federation Enabled</div>
+    <!--<i ></i>-->
+    <div >Federation Enabled</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
+  <div >
+    <div >
       {{ if len .unleashAllowedTeams }}
       {{ range $index, $element := .unleashAllowedTeams }}
-        <span class="ui label">{{ $element }}</span>
+        <span >{{ $element }}</span>
       {{ end }}
       {{ else }}
-      <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> Empty
+      <div >
+        <i ></i> Empty
       </div>
       {{ end }}
     </div>
-    <!--<i class="large code middle aligned icon"></i>-->
-    <div class="content">Allowed Teams</div>
+    <!--<i ></i>-->
+    <div >Allowed Teams</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
+  <div >
+    <div >
       {{ if len .unleashAllowedNamespaces }}
       {{ range $index, $element := .unleashAllowedNamespaces }}
-        <span class="ui label">{{ $element }}</span>
+        <span >{{ $element }}</span>
       {{ end }}
       {{ else }}
-      <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> Empty
+      <div >
+        <i ></i> Empty
       </div>
       {{ end }}
     </div>
-    <!--<i class="large code middle aligned icon"></i>-->
-    <div class="content">Allowed Namespaces</div>
+    <!--<i ></i>-->
+    <div >Allowed Namespaces</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
+  <div >
+    <div >
       {{ if len .unleashAllowedClusters }}
       {{ range $index, $element := .unleashAllowedClusters }}
-        <span class="ui label">{{ $element }}</span>
+        <span >{{ $element }}</span>
       {{ end }}
       {{ else }}
-      <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> Empty
+      <div >
+        <i ></i> Empty
       </div>
       {{ end }}
     </div>
-    <!--<i class="large code middle aligned icon"></i>-->
-    <div class="content">Allowed Clusters</div>
+    <!--<i ></i>-->
+    <div >Allowed Clusters</div>
   </div>
 </div>
-<h3 class="ui header">
-  <i class="settings icon"></i>
-  <div class="content">
+<h3 >
+  <i ></i>
+  <div >
     Server Settings
-    <div class="sub header">Kubernetes Resource Settings</div>
+    <div >Kubernetes Resource Settings</div>
   </div>
 </h3>
 
-<div class="ui middle aligned divided list">
-  <div class="item">
-    <div class="right floated content">
+<div >
+  <div >
+    <div >
       {{ if .unleashCustomVersion }}
-      <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> {{ .unleashCustomVersion }}</span>
+      <div >
+        <i ></i> {{ .unleashCustomVersion }}</span>
       </div>
       {{ else }}
-      <div class="ui green label">
+      <div >
         Latest
       </div>
       {{ end }}
     </div>
-    <!-- <i class="large internet explorer middle aligned icon"></i>-->
-    <div class="content">Custom Version</div>
+    <!-- <i ></i>-->
+    <div >Custom Version</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
+  <div >
+    <div >
       {{ if .unleashLogLevel }}
-      <div class="ui label">{{ .unleashLogLevel }}</div>
+      <div >{{ .unleashLogLevel }}</div>
       {{ else }}
-      <div class="ui yellow label">Unknown</div>
+      <div >Unknown</div>
       {{ end }}
     </div>
-    <!-- <i class="large internet explorer middle aligned icon"></i>-->
-    <div class="content">Log Level</div>
+    <!-- <i ></i>-->
+    <div >Log Level</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
+  <div >
+    <div >
       {{ if .instance.WebUrl }}
-      <a class="ui label" href="{{ .instance.WebUrl }}">{{ .instance.WebUrl }}</a>
+      <a  href="{{ .instance.WebUrl }}">{{ .instance.WebUrl }}</a>
       {{ else }}
-      <div class="ui red label">
-        <i class="exclamation triangle icon"></i> Not Found
+      <div >
+        <i ></i> Not Found
       </div>
       {{ end }}
     </div>
-    <!-- <i class="large internet explorer middle aligned icon"></i>-->
-    <div class="content">Web Ingress</div>
+    <!-- <i ></i>-->
+    <div >Web Ingress</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
+  <div >
+    <div >
       {{ if .instance.ApiUrl }}
-      <a class="ui label" href="{{ .instance.ApiUrl }}">{{ .instance.ApiUrl }}</a>
+      <a  href="{{ .instance.ApiUrl }}">{{ .instance.ApiUrl }}</a>
       {{ else }}
-      <div class="ui red label">
-        <i class="exclamation triangle icon"></i> Not Found
+      <div >
+        <i ></i> Not Found
       </div>
       {{ end }}
     </div>
-    <!--<i class="large code middle aligned icon"></i>-->
-    <div class="content">API ingress</div>
+    <!--<i ></i>-->
+    <div >API ingress</div>
   </div>
 </div>
 
-<h3 class="ui header">
-  <i class="settings icon"></i>
-  <div class="content">
+<h3 >
+  <i ></i>
+  <div >
     Database Settings
-    <div class="sub header">Database Connection Settings</div>
+    <div >Database Connection Settings</div>
   </div>
 </h3>
 
-<div class="ui middle aligned divided list">
-  <div class="item">
-    <div class="right floated content">
-      <a class="ui label" href="{{ .googleProjectURL }}">{{ .googleProjectID }}</a>
+<div >
+  <div >
+    <div >
+      <a  href="{{ .googleProjectURL }}">{{ .googleProjectID }}</a>
     </div>
-    <!--<i class="large database middle aligned icon"></i>-->
-    <div class="content">Google Cloud Project</div>
+    <!--<i ></i>-->
+    <div >Google Cloud Project</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
-      <a class="ui label" href="{{ .sqlInstanceURL }}">{{ .sqlInstanceID }}</a>
+  <div >
+    <div >
+      <a  href="{{ .sqlInstanceURL }}">{{ .sqlInstanceID }}</a>
     </div>
-    <!--<i class="large database middle aligned icon"></i>-->
-    <div class="content">Database Instance</div>
+    <!--<i ></i>-->
+    <div >Database Instance</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
-      <div class="ui label">
+  <div >
+    <div >
+      <div >
         {{ .sqlInstanceAddress }}
       </div>
     </div>
-    <!--<i class="large database middle aligned icon"></i>-->
-    <div class="content">Database Address</div>
+    <!--<i ></i>-->
+    <div >Database Address</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
-      <div class="ui label">
+  <div >
+    <div >
+      <div >
         {{ .sqlDatabaseName }}
       </div>
     </div>
-    <!--<i class="large database middle aligned icon"></i>-->
-    <div class="content">Database Name</div>
+    <!--<i ></i>-->
+    <div >Database Name</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
-      <div class="ui label">
+  <div >
+    <div >
+      <div >
         {{ .sqlDatabaseUser }}
       </div>
     </div>
-    <!--<i class="large user middle aligned icon"></i>-->
-    <div class="content">Database User</div>
+    <!--<i ></i>-->
+    <div >Database User</div>
   </div>
-  <div class="item">
-    <div class="right floated content">
-      <div class="ui label">
+  <div >
+    <div >
+      <div >
         {{ .sqlDatabaseSecret }}
       </div>
     </div>
-    <!--<i class="large user middle aligned icon"></i>-->
-    <div class="content">Database Secret</div>
+    <!--<i ></i>-->
+    <div>Database Secret</div>
   </div>
 </div>
 {{end}}

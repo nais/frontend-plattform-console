@@ -1,18 +1,18 @@
 {{define "content"}}
-<div class="ui breadcrumb">
-  <a class="section" href="/">Home</a>
-  <div class="divider"> / </div>
-  <a class="section" href="/unleash/">Unleash</a>
-  <div class="divider"> / </div>
-  <a class="section" href="/unleash/{{ .name }}">{{ .name }}</a>
-  <div class="divider"> / </div>
-  <div class="active section">Delete</div>
+<div>
+  <a href="/">Home</a>
+  <div>/</div>
+  <a href="/unleash/">Unleash</a>
+  <div>/</div>
+  <a href="/unleash/{{ .name }}">{{ .name }}</a>
+  <div>/</div>
+  <div>Delete</div>
 </div>
 
-<h3 class="ui header">Confirm deletion</h3>
+<h3>Confirm deletion</h3>
 {{ if .error }}
-<div class="ui error message">
-  <i class="close icon"></i>
+<div>
+  <i></i>
   {{ .error }}
 </div>
 {{ end }}
@@ -21,10 +21,12 @@
   <div class="field{{ if .error }} error{{ end }}">
     <div class="name field{{ if .error}} error{{ end }}">
       <label>Instance Name</label>
-      <input name="name" type="text" value="">
-      <p>Type the name of the Unleash instance <em>{{ .name }}</em> to delete it.</p>
+      <input name="name" type="text" value="" />
+      <p>
+        Type the name of the Unleash instance <em>{{ .name }}</em> to delete it.
+      </p>
     </div>
   </div>
-  <button class="negative ui button" type="submit">Delete</button>
+  <button type="submit">Delete</button>
 </form>
 {{end}}
