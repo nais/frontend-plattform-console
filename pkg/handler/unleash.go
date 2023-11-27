@@ -61,9 +61,16 @@ func (h *Handler) UnleashNew(c *gin.Context) {
 		yamlString = "Parse error - see logs"
 	}
 
+	uc := unleash.UnleashConfig{
+		EnableFederation: true,
+		AllowedClusters:  "dev-gcp,prod-gcp",
+		CustomVersion:    unleashVersions[0].GitTag,
+	}
+
 	c.HTML(200, "unleash-form.html", gin.H{
 		"title":           "New Unleash Instance",
 		"action":          "create",
+		"unleash":         uc,
 		"customImageName": unleash.UnleashCustomImageName,
 		"unleashVersions": unleashVersions,
 		"logLevel":        "warn",
@@ -100,23 +107,18 @@ func (h *Handler) UnleashInstanceShow(c *gin.Context) {
 	uc := unleash.UnleashVariables(instance.ServerInstance, false)
 
 	c.HTML(200, "unleash-show.html", gin.H{
-		"title":                    "Unleash: " + instance.Name,
-		"instance":                 instance,
-		"unleashCustomVersion":     uc.CustomVersion,
-		"unleashEnableFederation":  uc.EnableFederation,
-		"unleashAllowedTeams":      utils.SplitNoEmpty(uc.AllowedTeams, ","),
-		"unleashAllowedNamespaces": utils.SplitNoEmpty(uc.AllowedNamespaces, ","),
-		"unleashAllowedClusters":   utils.SplitNoEmpty(uc.AllowedClusters, ","),
-		"unleashLogLevel":          uc.LogLevel,
-		"googleProjectID":          h.config.Google.ProjectID,
-		"googleProjectURL":         h.config.GoogleProjectURL(""),
-		"sqlInstanceID":            h.config.Unleash.SQLInstanceID,
-		"sqlInstanceURL":           h.config.GoogleProjectURL(fmt.Sprintf("sql/instances/%s/overview", h.config.Unleash.SQLInstanceID)),
-		"sqlInstanceAddress":       h.config.Unleash.SQLInstanceAddress,
-		"sqlInstanceRegion":        h.config.Unleash.SQLInstanceRegion,
-		"sqlDatabaseName":          instance.Name,
-		"sqlDatabaseUser":          instance.Name,
-		"sqlDatabaseSecret":        instance.Name,
+		"title":              "Unleash: " + instance.Name,
+		"instance":           instance,
+		"unleash":            uc,
+		"googleProjectID":    h.config.Google.ProjectID,
+		"googleProjectURL":   h.config.GoogleProjectURL(""),
+		"sqlInstanceID":      h.config.Unleash.SQLInstanceID,
+		"sqlInstanceURL":     h.config.GoogleProjectURL(fmt.Sprintf("sql/instances/%s/overview", h.config.Unleash.SQLInstanceID)),
+		"sqlInstanceAddress": h.config.Unleash.SQLInstanceAddress,
+		"sqlInstanceRegion":  h.config.Unleash.SQLInstanceRegion,
+		"sqlDatabaseName":    instance.Name,
+		"sqlDatabaseUser":    instance.Name,
+		"sqlDatabaseSecret":  instance.Name,
 
 		"instanceYaml": template.HTML(instanceYaml),
 	})
@@ -134,109 +136,81 @@ func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 	}
 
 	c.HTML(200, "unleash-form.html", gin.H{
-		"title":             "Edit Unleash: " + instance.Name,
-		"action":            "edit",
-		"name":              uc.Name,
-		"customImageName":   unleash.UnleashCustomImageName,
-		"customVersion":     uc.CustomVersion,
-		"unleashVersions":   unleashVersions,
-		"enableFederation":  uc.EnableFederation,
-		"allowedTeams":      uc.AllowedTeams,
-		"allowedNamespaces": uc.AllowedNamespaces,
-		"allowedClusters":   uc.AllowedClusters,
-		"logLevel":          uc.LogLevel,
+		"title":           "Edit Unleash: " + instance.Name,
+		"action":          "edit",
+		"unleash":         uc,
+		"customImageName": unleash.UnleashCustomImageName,
+		"unleashVersions": unleashVersions,
 	})
 }
 
 func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	var (
-		name, title, action, nonce string
-		err                        error
+		title, action string
+		err           error
 	)
 
 	ctx := c.Request.Context()
 	log := h.logger.WithContext(ctx)
-
-	nameValidator := regexp.MustCompile(`^[a-zA-Z0-9-]+$`)
-	versionValidator := regexp.MustCompile(`^[a-zA-Z0-9-_\.+]*$`)
-	listValidator := regexp.MustCompile(`^[a-zA-Z0-9-,]*$`)
-	loglevelValidator := regexp.MustCompile(`^(debug|info|warn|error|fatal|panic)$`)
+	uc := &unleash.UnleashConfig{}
 
 	instance, exists := c.Get("unleashInstance")
 	if exists {
 		instance, ok := instance.(*unleash.UnleashInstance)
 		if !ok {
-			_ = c.Error(fmt.Errorf("could not convert instance to UnleashInstance"))
+			_ = c.Error(fmt.Errorf("could not convert instance to UnleashInstance")).
+				SetType(gin.ErrorTypePublic).
+				SetMeta("Error parsing existing Unleash instance")
 			return
 		}
+		uc = unleash.UnleashVariables(instance.ServerInstance, true)
+	}
 
-		name = instance.Name
-		title = "Edit Unleash: " + name
-		action = "edit"
+	if err = c.ShouldBind(uc); err != nil {
+		log.WithError(err).Error("Error binding post data to Unleash config")
 
-		nonce = instance.ServerInstance.Spec.Federation.SecretNonce
+		_ = c.Error(err).
+			SetType(gin.ErrorTypePublic).
+			SetMeta("Error binding post data to Unleash config")
+		return
+	}
+
+	if exists {
+		uc.Name = instance.(*unleash.UnleashInstance).ServerInstance.GetName()
 	} else {
-		name = c.PostForm("name")
-		title = "New Unleash Instance"
-		action = "create"
+		uc.FederationNonce = utils.RandomString(8)
 	}
 
-	uc := &unleash.UnleashConfig{
-		Name:              name,
-		CustomVersion:     c.PostForm("custom-version"),
-		EnableFederation:  c.PostForm("enable-federation") == "on",
-		FederationNonce:   nonce,
-		AllowedTeams:      c.PostForm("allowed-teams"),
-		AllowedNamespaces: c.PostForm("allowed-namespaces"),
-		AllowedClusters:   c.PostForm("allowed-clusters"),
-		LogLevel:          c.PostForm("loglevel"),
-	}
+	if validationErr := uc.Validate(); validationErr != nil {
+		log.WithError(validationErr).Error("Error validating Unleash config")
 
-	log.Info("Unleash instance form submitted")
-	log.Debug(uc)
-
-	if uc.LogLevel == "" {
-		uc.LogLevel = "warn"
-	}
-
-	nameError := !nameValidator.MatchString(name)
-	customVersionError := !versionValidator.MatchString(uc.CustomVersion)
-	allowedTeamsError := !listValidator.MatchString(uc.AllowedTeams)
-	allowedNamespacesError := !listValidator.MatchString(uc.AllowedNamespaces)
-	allowedClustersError := !listValidator.MatchString(uc.AllowedClusters)
-	loglevelError := !loglevelValidator.MatchString(uc.LogLevel)
-
-	if nameError || customVersionError || allowedTeamsError || allowedNamespacesError || allowedClustersError || loglevelError {
 		unleashVersions, err := github.UnleashVersions()
 		if err != nil {
-			h.logger.WithError(err).Error("Error getting Unleash versions from Github")
+			log.WithError(err).Error("Error getting Unleash versions from Github")
 			unleashVersions = []github.UnleashVersion{}
 		}
 
+		if exists {
+			title = "Edit Unleash: " + uc.Name
+			action = "edit"
+		} else {
+			title = "New Unleash Instance"
+			action = "create"
+		}
+
 		c.HTML(400, "unleash-form.html", gin.H{
-			"title":                  title,
-			"action":                 action,
-			"name":                   name,
-			"customVersion":          uc.CustomVersion,
-			"unleashVersions":        unleashVersions,
-			"customImageName":        unleash.UnleashCustomImageName,
-			"enableFederation":       uc.EnableFederation,
-			"allowedTeams":           uc.AllowedTeams,
-			"allowedNamespaces":      uc.AllowedNamespaces,
-			"allowedClusters":        uc.AllowedClusters,
-			"logLevel":               uc.LogLevel,
-			"nameError":              nameError,
-			"customVersionError":     customVersionError,
-			"allowedTeamsError":      allowedTeamsError,
-			"allowedNamespacesError": allowedNamespacesError,
-			"allowedClustersError":   allowedClustersError,
-			"loglevelError":          loglevelError,
-			"error":                  "Input validation failed, see errors in above fields",
+			"title":           title,
+			"action":          action,
+			"unleash":         uc,
+			"unleashVersions": unleashVersions,
+			"customImageName": unleash.UnleashCustomImageName,
+			"validationError": validationErr,
+			"error":           "Input validation failed, see errors in details",
 		})
 		return
 	}
 
-	if action == "edit" {
+	if exists {
 		err = h.unleashService.Update(ctx, uc)
 	} else {
 		err = h.unleashService.Create(ctx, uc)
@@ -257,7 +231,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(302, "/unleash/"+name)
+	c.Redirect(302, "/unleash/"+uc.Name)
 }
 
 func (h *Handler) UnleashInstanceDelete(c *gin.Context) {

@@ -2,9 +2,11 @@ package unleash
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
+	"github.com/go-playground/validator/v10"
 	"github.com/nais/bifrost/pkg/config"
 	"github.com/nais/bifrost/pkg/utils"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
@@ -16,15 +18,20 @@ import (
 )
 
 const (
-	UnleashCustomImageRepo = "europe-north1-docker.pkg.dev/nais-io/nais/images/"
-	UnleashCustomImageName = "unleash-v4"
-	UnleashRequestCPU      = "100m"
-	UnleashRequestMemory   = "128Mi"
-	UnleashLimitMemory     = "256Mi"
-	SqlProxyRequestCPU     = "10m"
-	SqlProxyRequestMemory  = "100Mi"
-	SqlProxyLimitMemory    = "100Mi"
+	UnleashCustomImageRepo    = "europe-north1-docker.pkg.dev/nais-io/nais/images/"
+	UnleashCustomImageName    = "unleash-v4"
+	UnleashRequestCPU         = "100m"
+	UnleashRequestMemory      = "128Mi"
+	UnleashLimitMemory        = "256Mi"
+	SqlProxyRequestCPU        = "10m"
+	SqlProxyRequestMemory     = "100Mi"
+	SqlProxyLimitMemory       = "100Mi"
+	DatabasePoolMax           = "3"
+	DatabasePoolIdleTimeoutMs = "1000"
+	LogLevel                  = "warn"
 )
+
+var FederationAllowedClusters = []string{"dev-gcp", "prod-gcp"}
 
 func boolRef(b bool) *bool {
 	boolVar := b
@@ -115,46 +122,49 @@ func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string, retur
 }
 
 type UnleashConfig struct {
-	Name              string
-	CustomVersion     string
-	EnableFederation  bool
-	FederationNonce   string
-	AllowedTeams      string
-	AllowedNamespaces string
-	AllowedClusters   string
-	LogLevel          string
+	Name                      string `form:"name" validate:"required,hostname"`
+	CustomVersion             string `form:"custom-version" validate:"omitempty,semver"`
+	EnableFederation          bool   `form:"enable-federation,default=true"`
+	FederationNonce           string `validate:"required,base64"`
+	AllowedTeams              string `form:"allowed-teams" validate:"omitempty"`
+	AllowedNamespaces         string `form:"allowed-namespaces" validate:"omitempty"`
+	AllowedClusters           string `form:"allowed-clusters" validate:"omitempty"`
+	LogLevel                  string `form:"loglevel,default=warn" validate:"required,oneof=debug info warn error fatal panic"`
+	DatabasePoolMax           int    `form:"database-pool-max,default=3" validate:"required,min=1,max=10"`
+	DatabasePoolIdleTimeoutMs int    `form:"database-pool-idle-timeout-ms,default=1000" validate:"required"`
+}
+
+func (uc *UnleashConfig) Validate() error {
+	validate := validator.New(validator.WithRequiredStructEnabled())
+	return validate.Struct(uc)
 }
 
 func UnleashVariables(server *unleashv1.Unleash, returnDefaults bool) *UnleashConfig {
 	uc := &UnleashConfig{}
 
 	uc.Name = server.GetName()
+	uc.FederationNonce = server.Spec.Federation.SecretNonce
 
 	if server.Spec.CustomImage != "" {
 		uc.CustomVersion = versionFromImage(server.Spec.CustomImage)
 	}
 
 	uc.AllowedTeams = getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", uc.Name, returnDefaults)
-	uc.LogLevel = getServerEnvVar(server, "LOG_LEVEL", "warn", returnDefaults)
+	uc.LogLevel = getServerEnvVar(server, "LOG_LEVEL", LogLevel, returnDefaults)
+	uc.DatabasePoolMax, _ = strconv.Atoi(getServerEnvVar(server, "DATABASE_POOL_MAX", DatabasePoolMax, returnDefaults))
+	uc.DatabasePoolIdleTimeoutMs, _ = strconv.Atoi(getServerEnvVar(server, "DATABASE_POOL_IDLE_TIMEOUT_MS", DatabasePoolIdleTimeoutMs, returnDefaults))
 	uc.EnableFederation = server.Spec.Federation.Enabled
-
 	uc.AllowedNamespaces = utils.JoinNoEmpty(server.Spec.Federation.Namespaces, ",")
-	if uc.AllowedNamespaces == "" {
-		uc.AllowedNamespaces = getServerEnvVar(server, "TEAMS_ALLOWED_NAMESPACES", "", returnDefaults)
-	}
-
 	uc.AllowedClusters = utils.JoinNoEmpty(server.Spec.Federation.Clusters, ",")
-	if uc.AllowedClusters == "" {
-		uc.AllowedClusters = getServerEnvVar(server, "TEAMS_ALLOWED_CLUSTERS", "", returnDefaults)
+
+	if uc.EnableFederation && len(uc.AllowedClusters) == 0 {
+		uc.AllowedNamespaces = utils.JoinNoEmpty(FederationAllowedClusters, ",")
 	}
 
 	return uc
 }
 
-func UnleashDefinition(
-	c *config.Config,
-	uc *UnleashConfig,
-) unleashv1.Unleash {
+func UnleashDefinition(c *config.Config, uc *UnleashConfig) unleashv1.Unleash {
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
 
@@ -264,14 +274,14 @@ func UnleashDefinition(
 				Name:  "TEAMS_ALLOWED_TEAMS",
 				Value: uc.AllowedTeams,
 			}, {
-				Name:  "TEAMS_ALLOWED_NAMESPACES",
-				Value: uc.AllowedNamespaces,
-			}, {
-				Name:  "TEAMS_ALLOWED_CLUSTERS",
-				Value: uc.AllowedClusters,
-			}, {
 				Name:  "LOG_LEVEL",
 				Value: uc.LogLevel,
+			}, {
+				Name:  "DATABASE_POOL_MAX",
+				Value: fmt.Sprintf("%d", uc.DatabasePoolMax),
+			}, {
+				Name:  "DATABASE_POOL_IDLE_TIMEOUT_MS",
+				Value: fmt.Sprintf("%d", uc.DatabasePoolIdleTimeoutMs),
 			}},
 			ExtraContainers: []corev1.Container{{
 				Name:  "sql-proxy",
