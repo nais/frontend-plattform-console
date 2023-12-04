@@ -10,21 +10,21 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ github.actor == 'dependabot[bot]' }}
     steps:
-      - name: Generate token
-        id: generate_token
-        uses: tibdex/github-app-token@v2.1.0
-        with:
-          app_id: "${{ secrets.DEPENDABOT_AUTO_MERGE_APP_ID}}"
-          private_key: "${{ secrets.DEPENDABOT_AUTO_MERGE_APP_SECRET }}"
-
       - name: Dependabot metadata
         id: metadata
         uses: dependabot/fetch-metadata@v1.6.0
         with:
           github-token: "${{ secrets.GITHUB_TOKEN }}"
+          
+      - name: Generate token
+        id: app-token
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ secrets.DEPENDABOT_AUTO_MERGE_APP_ID}}
+          private-key: ${{ secrets.DEPENDABOT_AUTO_MERGE_APP_SECRET }}
 
       - name: Authenticate cli
-        run: echo "${{ steps.generate_token.outputs.token }}" | gh auth login --with-token
+        run: echo "${{ steps.app-token.outputs.token }}" | gh auth login --with-token
 
       - name: Enable auto-merge for Dependabot PRs
         if: steps.metadata.outputs.update-type != 'version-update:semver-major'
