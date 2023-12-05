@@ -62,9 +62,16 @@ func (h *Handler) UnleashNew(c *gin.Context) {
 	}
 
 	uc := unleash.UnleashConfig{
-		EnableFederation: true,
-		AllowedClusters:  "dev-gcp,prod-gcp",
-		CustomVersion:    unleashVersions[0].GitTag,
+		Name:                      "",
+		CustomVersion:             unleashVersions[0].GitTag,
+		EnableFederation:          true,
+		FederationNonce:           "",
+		AllowedTeams:              "",
+		AllowedNamespaces:         "",
+		AllowedClusters:           "dev-gcp,prod-gcp",
+		LogLevel:                  "warn",
+		DatabasePoolMax:           0,
+		DatabasePoolIdleTimeoutMs: 0,
 	}
 
 	c.HTML(200, "unleash-form.html", gin.H{

@@ -202,6 +202,7 @@ func TestUnleashNew(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-teams\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-namespaces\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-clusters\" type=\"hidden\" value=\"dev-gcp,prod-gcp\">")
+	assert.Contains(t, w.Body.String(), "<input type=\"radio\" name=\"loglevel\" value=\"warn\" checked=\"checked\" tabindex=\"0\" class=\"hidden\">")
 
 	w = httptest.NewRecorder()
 	req, _ = http.NewRequest("POST", "/unleash/new", nil)
