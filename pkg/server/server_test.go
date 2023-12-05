@@ -309,6 +309,13 @@ func TestUnleashGet(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">Unleash: team-a</h1>")
+	assert.Contains(t, w.Body.String(), "<a class=\"ui button\" href=\"./edit\"><i class=\"pencil icon\"></i></a>")
+	assert.Contains(t, w.Body.String(), "<a class=\"ui button\" href=\"./delete\"><i class=\"trash icon\"></i></a>")
+	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">team-a,team-b</span>")
+	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">ns-a,ns-b</span>")
+	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">cluster-a,cluster-b</span>")
+	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">1.2.3</span>")
+	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">debug</span>")
 }
 
 func TestUnleashDelete(t *testing.T) {
