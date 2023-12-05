@@ -37,7 +37,7 @@
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
-      {{ if .unleashEnableFederation }}
+      {{ if .unleash.EnableFederation }}
         <span class="ui label">Enabled</span>
       {{ else }}
       <div class="ui orange label">
@@ -50,10 +50,8 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      {{ if len .unleashAllowedTeams }}
-      {{ range $index, $element := .unleashAllowedTeams }}
-        <span class="ui label">{{ $element }}</span>
-      {{ end }}
+      {{ if .unleash.AllowedTeams }}
+        <span class="ui label">{{ .unleash.AllowedTeams }}</span>
       {{ else }}
       <div class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
@@ -65,10 +63,8 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      {{ if len .unleashAllowedNamespaces }}
-      {{ range $index, $element := .unleashAllowedNamespaces }}
-        <span class="ui label">{{ $element }}</span>
-      {{ end }}
+      {{ if .unleash.AllowedNamespaces }}
+        <span class="ui label">{{ .unleash.AllowedNamespaces }}</span>
       {{ else }}
       <div class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
@@ -80,10 +76,8 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      {{ if len .unleashAllowedClusters }}
-      {{ range $index, $element := .unleashAllowedClusters }}
-        <span class="ui label">{{ $element }}</span>
-      {{ end }}
+      {{ if .unleash.AllowedClusters }}
+        <span class="ui label">{{ .unleash.AllowedClusters }}</span>
       {{ else }}
       <div class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
@@ -105,9 +99,9 @@
 <div class="ui middle aligned divided list">
   <div class="item">
     <div class="right floated content">
-      {{ if .unleashCustomVersion }}
+      {{ if .unleash.CustomVersion }}
       <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> {{ .unleashCustomVersion }}</span>
+        <i class="exclamation triangle icon"></i> <span class="ui label">{{ .unleash.CustomVersion }}</span>
       </div>
       {{ else }}
       <div class="ui green label">
@@ -120,8 +114,8 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      {{ if .unleashLogLevel }}
-      <div class="ui label">{{ .unleashLogLevel }}</div>
+      {{ if .unleash.LogLevel }}
+      <span class="ui label">{{ .unleash.LogLevel }}</span>
       {{ else }}
       <div class="ui yellow label">Unknown</div>
       {{ end }}
@@ -182,36 +176,36 @@
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">
+      <span class="ui label">
         {{ .sqlInstanceAddress }}
-      </div>
+      </span>
     </div>
     <!--<i class="large database middle aligned icon"></i>-->
     <div class="content">Database Address</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">
+      <span class="ui label">
         {{ .sqlDatabaseName }}
-      </div>
+      </span>
     </div>
     <!--<i class="large database middle aligned icon"></i>-->
     <div class="content">Database Name</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">
+      <span class="ui label">
         {{ .sqlDatabaseUser }}
-      </div>
+      </span>
     </div>
     <!--<i class="large user middle aligned icon"></i>-->
     <div class="content">Database User</div>
   </div>
   <div class="item">
     <div class="right floated content">
-      <div class="ui label">
+      <span class="ui label">
         {{ .sqlDatabaseSecret }}
-      </div>
+      </span>
     </div>
     <!--<i class="large user middle aligned icon"></i>-->
     <div class="content">Database Secret</div>
