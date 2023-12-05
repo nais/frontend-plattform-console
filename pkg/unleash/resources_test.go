@@ -30,18 +30,18 @@ func TestGetServerEnvVar(t *testing.T) {
 			Spec: unleashv1.UnleashSpec{
 				ExtraEnvVars: []corev1.EnvVar{
 					{
-						Name:  "TEAMS_ALLOWED_TEAMS",
+						Name:  "MY_ENV_VAR",
 						Value: "team-a,team-b",
 					},
 					{
-						Name:  "TEAMS_ALLOWED_NAMESPACES",
+						Name:  "MY_OTHER_ENV_VAR",
 						Value: "namespace-a,namespace-b",
 					},
 				},
 			},
 		}
 
-		assert.Equal(t, "team-a,team-b", getServerEnvVar(server, "TEAMS_ALLOWED_TEAMS", "default-value", true))
+		assert.Equal(t, "team-a,team-b", getServerEnvVar(server, "MY_ENV_VAR", "default-value", true))
 		assert.Equal(t, "default-value", getServerEnvVar(server, "NON_EXISTING_ENV_VAR", "default-value", true))
 	})
 
@@ -87,22 +87,38 @@ func TestUnleashVariables(t *testing.T) {
 	c := &config.Config{}
 
 	unleashInstance := UnleashDefinition(c, &UnleashConfig{
-		Name:              "my-instance",
-		CustomVersion:     "1.2.3",
-		AllowedTeams:      "team-a,team-b",
-		AllowedNamespaces: "namespace-a,namespace-b",
-		AllowedClusters:   "cluster-a,cluster-b",
-		LogLevel:          "debug",
+		Name:                      "my-instance",
+		CustomVersion:             "1.2.3",
+		EnableFederation:          true,
+		FederationNonce:           "abc123",
+		AllowedTeams:              "team-a,team-b",
+		AllowedNamespaces:         "namespace-a,namespace-b",
+		AllowedClusters:           "cluster-a,cluster-b",
+		LogLevel:                  "debug",
+		DatabasePoolMax:           10,
+		DatabasePoolIdleTimeoutMs: 100,
 	})
+	uc := *UnleashVariables(&unleashInstance, true)
+	assert.Equal(t, UnleashConfig{
+		Name:                      "my-instance",
+		CustomVersion:             "1.2.3",
+		EnableFederation:          true,
+		FederationNonce:           "abc123",
+		AllowedTeams:              "team-a,team-b",
+		AllowedNamespaces:         "namespace-a,namespace-b",
+		AllowedClusters:           "cluster-a,cluster-b",
+		LogLevel:                  "debug",
+		DatabasePoolMax:           10,
+		DatabasePoolIdleTimeoutMs: 100,
+	}, uc)
 
-	uc := UnleashVariables(&unleashInstance, true)
-
-	assert.Equal(t, "my-instance", uc.Name)
-	assert.Equal(t, "1.2.3", uc.CustomVersion)
-	assert.Equal(t, "team-a,team-b", uc.AllowedTeams)
-	assert.Equal(t, "namespace-a,namespace-b", uc.AllowedNamespaces)
-	assert.Equal(t, "cluster-a,cluster-b", uc.AllowedClusters)
-	assert.Equal(t, "debug", uc.LogLevel)
+	unleashInstance = unleashv1.Unleash{}
+	uc = *UnleashVariables(&unleashInstance, true)
+	assert.Equal(t, UnleashConfig{
+		LogLevel:                  "warn",
+		DatabasePoolMax:           3,
+		DatabasePoolIdleTimeoutMs: 1000,
+	}, uc)
 }
 
 func TestFQDNNetworkPolicySpec(t *testing.T) {
@@ -292,14 +308,14 @@ func TestUnleashSpec(t *testing.T) {
 					Name:  "TEAMS_ALLOWED_TEAMS",
 					Value: "",
 				}, {
-					Name:  "TEAMS_ALLOWED_NAMESPACES",
-					Value: "",
-				}, {
-					Name:  "TEAMS_ALLOWED_CLUSTERS",
-					Value: "",
-				}, {
 					Name:  "LOG_LEVEL",
 					Value: "",
+				}, {
+					Name:  "DATABASE_POOL_MAX",
+					Value: "0",
+				}, {
+					Name:  "DATABASE_POOL_IDLE_TIMEOUT_MS",
+					Value: "0",
 				}},
 				ExtraContainers: []corev1.Container{{
 					Name:  "sql-proxy",
@@ -346,12 +362,15 @@ func TestUnleashSpec(t *testing.T) {
 
 	t.Run("custom single values", func(t *testing.T) {
 		uc := &UnleashConfig{
-			Name:              "my-instance",
-			CustomVersion:     "9.9.9",
-			AllowedTeams:      "my-team",
-			AllowedNamespaces: "my-namespace",
-			AllowedClusters:   "my-cluster",
-			LogLevel:          "debug",
+			Name:                      "my-instance",
+			CustomVersion:             "9.9.9",
+			EnableFederation:          true,
+			AllowedTeams:              "my-team",
+			AllowedNamespaces:         "my-namespace",
+			AllowedClusters:           "my-cluster",
+			LogLevel:                  "debug",
+			DatabasePoolMax:           10,
+			DatabasePoolIdleTimeoutMs: 100,
 		}
 		a := UnleashDefinition(&c, uc)
 
@@ -362,29 +381,31 @@ func TestUnleashSpec(t *testing.T) {
 		})
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
-			Name:  "TEAMS_ALLOWED_NAMESPACES",
-			Value: "my-namespace",
-		})
-
-		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
-			Name:  "TEAMS_ALLOWED_CLUSTERS",
-			Value: "my-cluster",
-		})
-
-		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
 			Name:  "LOG_LEVEL",
 			Value: "debug",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "DATABASE_POOL_MAX",
+			Value: "10",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "DATABASE_POOL_IDLE_TIMEOUT_MS",
+			Value: "100",
 		})
 	})
 
 	t.Run("custom multiple values", func(t *testing.T) {
 		uc := &UnleashConfig{
-			Name:              "my-instance",
-			CustomVersion:     "9.9.9",
-			AllowedTeams:      "team-a,team-b,team-c",
-			AllowedNamespaces: "ns-a,ns-b,ns-c",
-			AllowedClusters:   "cluster-a,cluster-b,cluster-c",
-			LogLevel:          "debug",
+			Name:                      "my-instance",
+			CustomVersion:             "9.9.9",
+			AllowedTeams:              "team-a,team-b,team-c",
+			AllowedNamespaces:         "ns-a,ns-b,ns-c",
+			AllowedClusters:           "cluster-a,cluster-b,cluster-c",
+			LogLevel:                  "debug",
+			DatabasePoolMax:           10,
+			DatabasePoolIdleTimeoutMs: 100,
 		}
 
 		a := UnleashDefinition(&c, uc)
@@ -395,13 +416,18 @@ func TestUnleashSpec(t *testing.T) {
 		})
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
-			Name:  "TEAMS_ALLOWED_NAMESPACES",
-			Value: "ns-a,ns-b,ns-c",
+			Name:  "LOG_LEVEL",
+			Value: "debug",
 		})
 
 		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
-			Name:  "TEAMS_ALLOWED_CLUSTERS",
-			Value: "cluster-a,cluster-b,cluster-c",
+			Name:  "DATABASE_POOL_MAX",
+			Value: "10",
+		})
+
+		assert.Contains(t, a.Spec.ExtraEnvVars, corev1.EnvVar{
+			Name:  "DATABASE_POOL_IDLE_TIMEOUT_MS",
+			Value: "100",
 		})
 	})
 }

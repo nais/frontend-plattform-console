@@ -1,0 +1,33 @@
+backend:
+  unleash:
+    instanceNamespace: bifrost-unleash
+
+    sqlInstanceId: foo
+    sqlInstanceAddress: 1.2.3.4
+    sqlInstanceRegion: foo
+
+    googleServiceAccountEmail: foo@bar
+    kubernetesServiceAccountName: foo
+
+    webIngressClass: foo
+    webIngressHost: foo.bar
+
+    apiIngressClass: foo
+    apiIngressHost: foo.bar
+
+    teamsApiToken: foo
+
+  google:
+    projectId: foo
+    projectNumber: 123
+    serviceAccountEmail: foo@bar
+    iapBackendServiceId: 123
+
+  teams:
+    apiToken: foo
+
+ingress:
+  host: foo.bar
+
+networkPolicy:
+  apiServerCIDR: 1.2.3.4/32

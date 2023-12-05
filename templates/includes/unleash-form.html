@@ -20,13 +20,13 @@
     <div class="two fields">
       <div class="name field{{ if .nameError}} error{{ end }}">
         <label>Instance Name</label>
-        <input name="name" type="text"{{ if eq .action "edit" }} disabled{{ end }} value="{{ .name }}">
+        <input name="name" type="text"{{ if eq .action "edit" }} disabled{{ end }} value="{{ .unleash.Name }}">
       </div>
       <div class="version field{{ if .customVersionError }} error{{ end }}">
         <label>Custom Version</label>
 
         <div class="ui fluid search selection clearable dropdown">
-          <input name="custom-version" type="hidden" value="{{ .customVersion }}">
+          <input name="custom-version" type="hidden" value="{{ .unleash.CustomVersion }}">
           <i class="dropdown icon"></i>
           <div class="default text">Latest Versions</div>
           <div class="menu">
@@ -42,7 +42,7 @@
   <div class="federation field">
     <label>Enable Federation</label>
     <div class="ui toggle checkbox">
-      <input name="enable-federation" type="checkbox" value="on"{{ if .enableFederation }} checked{{ end }}>
+      <input name="enable-federation" type="checkbox" value="on"{{ if .unleash.EnableFederation }} checked{{ end }}>
       <label>Enable federation to allowed clusters and namespaces</label>
     </div>
   </div>
@@ -50,7 +50,7 @@
   <div class="teams field{{ if .allowedTeamsError }} error{{ end }}">
     <label>Allowed Teams</label>
     <div class="ui fluid multiple search selection dropdown">
-      <input name="allowed-teams" type="hidden" value="{{ .allowedTeams }}">
+      <input name="allowed-teams" type="hidden" value="{{ .unleash.AllowedTeams }}">
       <i class="dropdown icon"></i>
       <div class="default text">Teams</div>
       <div class="menu"></div>
@@ -61,7 +61,7 @@
   <div class="namespaces field{{ if .allowedNamespacesError }} error{{ end }}">
     <label>Allowed Namespaces</label>
     <div class="ui fluid multiple search selection dropdown">
-      <input name="allowed-namespaces" type="hidden" value="{{ .allowedNamespaces }}">
+      <input name="allowed-namespaces" type="hidden" value="{{ .unleash.AllowedNamespaces }}">
       <i class="dropdown icon"></i>
       <div class="default text">Namespaces</div>
       <div class="menu"></div>
@@ -72,7 +72,7 @@
   <div class="clusters field{{ if .allowedClistersError }} error{{ end }}">
     <label>Allowed Clusters</label>
     <div class="ui fluid multiple search selection dropdown">
-      <input name="allowed-clusters" type="hidden" value="{{ .allowedClusters }}">
+      <input name="allowed-clusters" type="hidden" value="{{ .unleash.AllowedClusters }}">
       <i class="dropdown icon"></i>
       <div class="default text">Clusters</div>
       <div class="menu">
@@ -88,26 +88,26 @@
   <div class="inline fields">
     <label for="fruit">Log Level:</label>
     <div class="field">
-      <div class="ui radio checkbox{{ if eq .logLevel "error"}} checked{{ end }}">
-        <input type="radio" name="loglevel" value="error" {{ if eq .logLevel "error"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+      <div class="ui radio checkbox{{ if eq .unleash.LogLevel "error"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="error" {{ if eq .unleash.LogLevel "error"}}checked="checked" {{ end }}tabindex="0" class="hidden">
         <label>Error</label>
       </div>
     </div>
     <div class="field">
-      <div class="ui radio checkbox checked{{ if eq .logLevel "warn"}} checked{{ end }}">
-        <input type="radio" name="loglevel" value="warn" {{ if eq .logLevel "warn"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+      <div class="ui radio checkbox{{ if eq .unleash.LogLevel "warn"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="warn" {{ if eq .unleash.LogLevel "warn"}}checked="checked" {{ end }}tabindex="0" class="hidden">
         <label>Warn</label>
       </div>
     </div>
     <div class="field">
-      <div class="ui radio checkbox{{ if eq .logLevel "info"}} checked{{ end }}">
-        <input type="radio" name="loglevel" value="info" {{ if eq .logLevel "info"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+      <div class="ui radio checkbox{{ if eq .unleash.LogLevel "info"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="info" {{ if eq .unleash.LogLevel "info"}}checked="checked" {{ end }}tabindex="0" class="hidden">
         <label>Info</label>
       </div>
     </div>
     <div class="field">
-      <div class="ui radio checkbox{{ if eq .logLevel "debug"}} checked{{ end }}">
-        <tnput type="radio" name="loglevel" value="debug" {{ if eq .logLevel "debug"}}checked="checked" {{ end }}tabindex="0" class="hidden">
+      <div class="ui radio checkbox{{ if eq .unleash.LogLevel "debug"}} checked{{ end }}">
+        <input type="radio" name="loglevel" value="debug" {{ if eq .unleash.LogLevel "debug"}}checked="checked" {{ end }}tabindex="0" class="hidden">
         <label>Debug</label>
       </div>
     </div>
