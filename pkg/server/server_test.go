@@ -74,10 +74,14 @@ func (s *MockUnleashService) Delete(ctx context.Context, name string) error {
 }
 
 func unleashConfigToForm(uc *unleash.UnleashConfig) string {
-	return fmt.Sprintf("name=%s&custom-version=%s&enable-federation=%t&allowed-teams=%s&allowed-namespaces=%s&allowed-clusters=%s&loglevel=%s&database-pool-max=%d&database-pool-idle-timeout-ms=%d",
+	enableFederation := ""
+	if uc.EnableFederation {
+		enableFederation = "true"
+	}
+	return fmt.Sprintf("name=%s&custom-version=%s&enable-federation=%s&allowed-teams=%s&allowed-namespaces=%s&allowed-clusters=%s&loglevel=%s&database-pool-max=%d&database-pool-idle-timeout-ms=%d",
 		uc.Name,
 		uc.CustomVersion,
-		uc.EnableFederation,
+		enableFederation,
 		uc.AllowedTeams,
 		uc.AllowedNamespaces,
 		uc.AllowedClusters,
@@ -198,7 +202,7 @@ func TestUnleashNew(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"name\" type=\"text\" value=\"\">")
 	// assert.Contains(t, w.Body.String(), "<input name=\"custom-version\" type=\"hidden\" value=\"\">")
-	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"on\" checked>")
+	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"true\" checked>")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-teams\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-namespaces\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-clusters\" type=\"hidden\" value=\"dev-gcp,prod-gcp\">")
@@ -268,7 +272,7 @@ func TestUnleashEdit(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"name\" type=\"text\" disabled value=\"team-a\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"custom-version\" type=\"hidden\" value=\"1.2.3\">")
-	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"on\" checked>")
+	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"true\" checked>")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-teams\" type=\"hidden\" value=\"team-a,team-b\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-namespaces\" type=\"hidden\" value=\"ns-a,ns-b\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-clusters\" type=\"hidden\" value=\"cluster-a,cluster-b\">")
@@ -282,7 +286,7 @@ func TestUnleashEdit(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"name\" type=\"text\" disabled value=\"team-b\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"custom-version\" type=\"hidden\" value=\"\">")
-	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"on\">")
+	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"true\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-teams\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-namespaces\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-clusters\" type=\"hidden\" value=\"\">")
