@@ -318,7 +318,7 @@ func TestUnleashGet(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">team-a,team-b</span>")
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">ns-a,ns-b</span>")
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">cluster-a,cluster-b</span>")
-	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">v1.2.3-00000000-000000-abcd1234</span>")
+	assert.Contains(t, w.Body.String(), "<i class=\"exclamation triangle icon\"></i> v1.2.3-00000000-000000-abcd1234")
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">debug</span>")
 }
 
