@@ -7,7 +7,7 @@
   {{ if eq .action "create" }}
   <div class="active section">New</div>
   {{ else }}
-  <a class="section" href="/unleash/{{ .name }}">{{ .name }}</a>
+  <a class="section" href="/unleash/{{ .unleash.Name }}">{{ .name }}</a>
   <div class="divider"> / </div>
   <div class="active section">Edit</div>
   {{ end }}

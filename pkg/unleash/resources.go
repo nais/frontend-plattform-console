@@ -123,7 +123,7 @@ func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string, retur
 
 type UnleashConfig struct {
 	Name                      string `form:"name" validate:"required,hostname"`
-	CustomVersion             string `form:"custom-version" validate:"omitempty,semver"`
+	CustomVersion             string `form:"custom-version" validate:"omitempty"`
 	EnableFederation          bool   `form:"enable-federation,default=true"`
 	FederationNonce           string `validate:"required,base64"`
 	AllowedTeams              string `form:"allowed-teams" validate:"omitempty"`
