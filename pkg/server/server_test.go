@@ -130,7 +130,7 @@ func newUnleashRoute() (c *config.Config, service *MockUnleashService, router *g
 
 	unleash1 := unleash.UnleashDefinition(c, &unleash.UnleashConfig{
 		Name:                      "team-a",
-		CustomVersion:             "1.2.3",
+		CustomVersion:             "v1.2.3-00000000-000000-abcd1234",
 		EnableFederation:          true,
 		FederationNonce:           "abc123",
 		AllowedTeams:              "team-a,team-b",
@@ -234,7 +234,7 @@ func TestUnleashNew(t *testing.T) {
 	w = httptest.NewRecorder()
 	uc := &unleash.UnleashConfig{
 		Name:                      "my-name",
-		CustomVersion:             "1.2.3",
+		CustomVersion:             "v1.2.3-00000000-000000-abcd1234",
 		EnableFederation:          true,
 		AllowedTeams:              "team-a,team-b",
 		AllowedNamespaces:         "ns-a,ns-b",
@@ -251,7 +251,7 @@ func TestUnleashNew(t *testing.T) {
 	assert.Equal(t, "/unleash/my-name", w.Header().Get("Location"))
 	assert.Equal(t, 4, len(service.Instances))
 	assert.Equal(t, "my-name", service.Instances[3].Name)
-	assert.Equal(t, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:1.2.3", service.Instances[3].ServerInstance.Spec.CustomImage)
+	assert.Equal(t, "europe-north1-docker.pkg.dev/nais-io/nais/images/unleash-v4:v1.2.3-00000000-000000-abcd1234", service.Instances[3].ServerInstance.Spec.CustomImage)
 	assert.Equal(t, true, service.Instances[3].ServerInstance.Spec.Federation.Enabled, true)
 	assert.Equal(t, []string{"cluster-a", "cluster-b"}, service.Instances[3].ServerInstance.Spec.Federation.Clusters)
 	assert.Equal(t, []string{"ns-a", "ns-b"}, service.Instances[3].ServerInstance.Spec.Federation.Namespaces)
@@ -271,7 +271,7 @@ func TestUnleashEdit(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<h1 class=\"ui header\">Edit Unleash: team-a</h1>")
 	assert.Contains(t, w.Body.String(), "<form class=\"ui form\" method=\"POST\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"name\" type=\"text\" disabled value=\"team-a\">")
-	assert.Contains(t, w.Body.String(), "<input name=\"custom-version\" type=\"hidden\" value=\"1.2.3\">")
+	assert.Contains(t, w.Body.String(), "<input name=\"custom-version\" type=\"hidden\" value=\"v1.2.3-00000000-000000-abcd1234\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"enable-federation\" type=\"checkbox\" value=\"true\" checked>")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-teams\" type=\"hidden\" value=\"team-a,team-b\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-namespaces\" type=\"hidden\" value=\"ns-a,ns-b\">")
@@ -318,7 +318,7 @@ func TestUnleashGet(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">team-a,team-b</span>")
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">ns-a,ns-b</span>")
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">cluster-a,cluster-b</span>")
-	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">1.2.3</span>")
+	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">v1.2.3-00000000-000000-abcd1234</span>")
 	assert.Contains(t, w.Body.String(), "<span class=\"ui label\">debug</span>")
 }
 
