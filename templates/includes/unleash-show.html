@@ -40,9 +40,9 @@
       {{ if .unleash.EnableFederation }}
         <span class="ui label">Enabled</span>
       {{ else }}
-      <div class="ui orange label">
+      <span class="ui orange label">
         <i class="exclamation triangle icon"></i> Disabled
-      </div>
+      </span>
       {{ end }}
     </div>
     <!--<i class="large code middle aligned icon"></i>-->
@@ -53,9 +53,9 @@
       {{ if .unleash.AllowedTeams }}
         <span class="ui label">{{ .unleash.AllowedTeams }}</span>
       {{ else }}
-      <div class="ui orange label">
+      <span class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
-      </div>
+      </span>
       {{ end }}
     </div>
     <!--<i class="large code middle aligned icon"></i>-->
@@ -66,9 +66,9 @@
       {{ if .unleash.AllowedNamespaces }}
         <span class="ui label">{{ .unleash.AllowedNamespaces }}</span>
       {{ else }}
-      <div class="ui orange label">
+      <span class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
-      </div>
+      </span>
       {{ end }}
     </div>
     <!--<i class="large code middle aligned icon"></i>-->
@@ -79,9 +79,9 @@
       {{ if .unleash.AllowedClusters }}
         <span class="ui label">{{ .unleash.AllowedClusters }}</span>
       {{ else }}
-      <div class="ui orange label">
+      <span class="ui orange label">
         <i class="exclamation triangle icon"></i> Empty
-      </div>
+      </span>
       {{ end }}
     </div>
     <!--<i class="large code middle aligned icon"></i>-->
@@ -100,13 +100,13 @@
   <div class="item">
     <div class="right floated content">
       {{ if .unleash.CustomVersion }}
-      <div class="ui orange label">
-        <i class="exclamation triangle icon"></i> <span class="ui label">{{ .unleash.CustomVersion }}</span>
-      </div>
+      <span class="ui orange label">
+        <i class="exclamation triangle icon"></i> {{ .unleash.CustomVersion }}
+      </span>
       {{ else }}
-      <div class="ui green label">
+      <span class="ui green label">
         Latest
-      </div>
+      </span>
       {{ end }}
     </div>
     <!-- <i class="large internet explorer middle aligned icon"></i>-->
@@ -117,7 +117,7 @@
       {{ if .unleash.LogLevel }}
       <span class="ui label">{{ .unleash.LogLevel }}</span>
       {{ else }}
-      <div class="ui yellow label">Unknown</div>
+      <span class="ui yellow label">Unknown</span>
       {{ end }}
     </div>
     <!-- <i class="large internet explorer middle aligned icon"></i>-->
@@ -128,9 +128,9 @@
       {{ if .instance.WebUrl }}
       <a class="ui label" href="{{ .instance.WebUrl }}">{{ .instance.WebUrl }}</a>
       {{ else }}
-      <div class="ui red label">
+      <span class="ui red label">
         <i class="exclamation triangle icon"></i> Not Found
-      </div>
+      </span>
       {{ end }}
     </div>
     <!-- <i class="large internet explorer middle aligned icon"></i>-->
@@ -141,9 +141,9 @@
       {{ if .instance.ApiUrl }}
       <a class="ui label" href="{{ .instance.ApiUrl }}">{{ .instance.ApiUrl }}</a>
       {{ else }}
-      <div class="ui red label">
+      <span class="ui red label">
         <i class="exclamation triangle icon"></i> Not Found
-      </div>
+      </span>
       {{ end }}
     </div>
     <!--<i class="large code middle aligned icon"></i>-->
