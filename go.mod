@@ -16,7 +16,7 @@ require (
 	google.golang.org/api v0.156.0
 	gopkg.in/yaml.v2 v2.4.0
 	k8s.io/api v0.28.5
-	k8s.io/apimachinery v0.28.5
+	k8s.io/apimachinery v0.28.6
 	k8s.io/client-go v0.28.5
 	sigs.k8s.io/controller-runtime v0.16.3
 )
@@ -177,9 +177,9 @@ require (
 	go.uber.org/zap v1.26.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/exp/typeparams v0.0.0-20230307190834-24139beb5833 // indirect
-	golang.org/x/mod v0.13.0 // indirect
+	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/sync v0.6.0 // indirect
-	golang.org/x/tools v0.14.0 // indirect
+	golang.org/x/tools v0.16.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	mvdan.cc/interfacer v0.0.0-20180901003855-c20040233aed // indirect
 	mvdan.cc/lint v0.0.0-20170908181259-adc824a0674b // indirect
