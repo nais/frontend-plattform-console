@@ -12,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/config"
 	"github.com/nais/bifrost/pkg/unleash"
+	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	v1 "k8s.io/api/core/v1"
@@ -140,6 +141,9 @@ func newUnleashRoute() (c *config.Config, service *MockUnleashService, router *g
 		DatabasePoolMax:           10,
 		DatabasePoolIdleTimeoutMs: 100,
 	})
+	unleash1.Status = unleashv1.UnleashStatus{
+		Version: "1.2.3",
+	}
 	unleash2 := unleash.UnleashDefinition(c, &unleash.UnleashConfig{
 		Name:                      "team-b",
 		CustomVersion:             "",
@@ -152,6 +156,9 @@ func newUnleashRoute() (c *config.Config, service *MockUnleashService, router *g
 		DatabasePoolMax:           3,
 		DatabasePoolIdleTimeoutMs: 1000,
 	})
+	unleash2.Status = unleashv1.UnleashStatus{
+		Version: "4.5.6",
+	}
 
 	logger := logrus.New()
 	service = &MockUnleashService{
@@ -188,7 +195,9 @@ func TestUnleashIndex(t *testing.T) {
 	router.ServeHTTP(w, req)
 	assert.Equal(t, 200, w.Code)
 	assert.Contains(t, w.Body.String(), "<a class=\"header\" href=\"team-a\">team-a</a>")
+	assert.Contains(t, w.Body.String(), "<div class=\"description\">Version 1.2.3</div>")
 	assert.Contains(t, w.Body.String(), "<a class=\"header\" href=\"team-b\">team-b</a>")
+	assert.Contains(t, w.Body.String(), "<div class=\"description\">Version 4.5.6</div>")
 }
 
 func TestUnleashNew(t *testing.T) {

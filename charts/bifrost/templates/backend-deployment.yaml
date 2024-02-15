@@ -13,7 +13,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "bifrost.selectorLabels" . | nindent 8 }}
+        {{- include "bifrost.labels" . | nindent 8 }}
         component: backend
       annotations:
         kubectl.kubernetes.io/default-container: {{ .Chart.Name }}

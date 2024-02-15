@@ -34,6 +34,7 @@ Create chart name and version as used by the chart label.
 Common labels
 */}}
 {{- define "bifrost.labels" -}}
+app: {{ include "bifrost.name" . }}
 helm.sh/chart: {{ include "bifrost.chart" . }}
 {{ include "bifrost.selectorLabels" . }}
 {{- if .Chart.AppVersion }}
