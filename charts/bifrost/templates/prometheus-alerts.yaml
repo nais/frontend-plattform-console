@@ -18,7 +18,7 @@ spec:
           summary: |
             {{ "The p99 database query latency for Unleash instance `{{ $labels.service }}` has been above 0.5 seconds for the last 5 minutes." }}
           consequence: "Applications may experience slow response times from Unleash API and UI."
-          actions: |
+          action: |
             {{ "Check the database for slow queries and add indexes where appropriate." }}
     - name: unleash_http_alerts
       rules:
@@ -29,8 +29,8 @@ spec:
           severity: warning
         annotations:
           summary: "High rate of unsuccessful requests for Nginx Ingress Controller"
-          description: "The rate of unsuccessful requests for Nginx Ingress Controller in the bifrost-unleash namespace has been above 5% of the total request rate for the last 5 minutes."
-          actions: "Check the Nginx Ingress Controller logs for errors and investigate the root cause of the issue."
+          consequence: "Applications may problems fetching feature toggles from Unleash or taking actions in the Unleash UI."
+          action: "Check the Nginx Ingress Controller logs request endpoints for errors and investigate the root cause of the issue."
     - name: unleasherator_alerts
       rules:
       - alert: UnleasheratorConnectionProblem
@@ -40,5 +40,5 @@ spec:
           severity: critical
         annotations:
           summary: "No connected instances for Unleash"
-          description: "The Unleash operator is not able to connect to any Unleash service instances."
-          actions: "Check the Unleash operator logs for errors and investigate the root cause of the issue."
+          consequence: "Unleasherator is not able to connect to Unleash and create new API keys for applications."
+          action: "Check the Unleasherator logs for errors and investigate the root cause of the issue."
