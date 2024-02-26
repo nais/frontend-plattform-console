@@ -254,7 +254,7 @@ require (
 	google.golang.org/protobuf v1.32.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	honnef.co/go/tools v0.4.6
+	honnef.co/go/tools v0.4.7
 	k8s.io/apiextensions-apiserver v0.29.1 // indirect
 	k8s.io/component-base v0.29.1 // indirect
 	k8s.io/klog/v2 v2.120.1 // indirect
