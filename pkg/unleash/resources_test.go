@@ -156,7 +156,7 @@ func TestFQDNNetworkPolicySpec(t *testing.T) {
 					},
 					To: []fqdnV1alpha3.FQDNNetworkPolicyPeer{
 						{
-							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com"},
+							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com", "console.nav.cloud.nais.io"},
 						},
 					},
 				},
@@ -203,7 +203,7 @@ func TestUnleashSpec(t *testing.T) {
 			InstanceWebIngressClass: "unleash-web-ingress-class",
 			InstanceAPIIngressHost:  "unleash-api.example.com",
 			InstanceAPIIngressClass: "unleash-api-ingress-class",
-			TeamsApiURL:             "teams.example.com",
+			TeamsApiURL:             "https://teams.example.com/query",
 			TeamsApiSecretName:      "my-instances-api-secret",
 			TeamsApiSecretTokenKey:  "token",
 		},
@@ -212,9 +212,6 @@ func TestUnleashSpec(t *testing.T) {
 
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
-
-	teamsApiProto := corev1.ProtocolTCP
-	teamsApiPort := intstr.FromInt(3000)
 
 	t.Run("default values", func(t *testing.T) {
 		a := UnleashDefinition(&c, &UnleashConfig{Name: "my-instance", FederationNonce: "my-nonce"})
@@ -263,23 +260,6 @@ func TestUnleashSpec(t *testing.T) {
 								CIDR: "1.2.3.4/32",
 							},
 						}},
-					}, {
-						Ports: []networkingv1.NetworkPolicyPort{{
-							Protocol: &teamsApiProto,
-							Port:     &teamsApiPort,
-						}},
-						To: []networkingv1.NetworkPolicyPeer{{
-							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"kubernetes.io/metadata.name": "nais-system",
-								},
-							},
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"app.kubernetes.io/name": "teams-backend",
-								},
-							},
-						}},
 					}},
 				},
 				Federation: unleashv1.UnleashFederationConfig{
@@ -293,7 +273,7 @@ func TestUnleashSpec(t *testing.T) {
 					Value: "/projects/1234/global/backendServices/5678",
 				}, {
 					Name:  "TEAMS_API_URL",
-					Value: "teams.example.com",
+					Value: "https://teams.example.com/query",
 				}, {
 					Name: "TEAMS_API_TOKEN",
 					ValueFrom: &corev1.EnvVarSource{
