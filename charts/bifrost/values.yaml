@@ -33,7 +33,7 @@ backend:
     # apiIngressHost:  # mapped in fasit
 
     # Unleash teams config
-    teamsApiUrl: http://teams-backend.nais-system.svc/query
+    teamsApiUrl: https://console.nav.cloud.nais.io/query
     # teamsApiToken:  # mapped in fasit
     teamsApiTokenSecretName: teams-api-token
     teamsApiTokenSecretKey: token
@@ -45,7 +45,7 @@ backend:
     # iapBackendServiceId:  # mapped in fasit
 
   teams:
-    apiUrl: teams-backend.nais-system.svc
+    apiUrl: https://console.nav.cloud.nais.io/query
     # apiToken:  # mapped in fasit
     apiTokenSecretKey: token
 

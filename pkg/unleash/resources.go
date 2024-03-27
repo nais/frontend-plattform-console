@@ -74,7 +74,7 @@ func FQDNNetworkPolicyDefinition(name string, kubeNamespace string) fqdnV1alpha3
 					},
 					To: []fqdnV1alpha3.FQDNNetworkPolicyPeer{
 						{
-							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com"},
+							FQDNs: []string{"sqladmin.googleapis.com", "www.gstatic.com", "hooks.slack.com", "console.nav.cloud.nais.io"},
 						},
 					},
 				},
@@ -168,11 +168,6 @@ func UnleashDefinition(c *config.Config, uc *UnleashConfig) unleashv1.Unleash {
 	cloudSqlProto := corev1.ProtocolTCP
 	cloudSqlPort := intstr.FromInt(3307)
 
-	teamsApiProto := corev1.ProtocolTCP
-	teamsApiPort := intstr.FromInt(3000)
-	teamsApiNamespace := "nais-system"
-	teamsApiName := "teams-backend"
-
 	googleIapAudience := c.GoogleIAPAudience()
 
 	federationNonce := uc.FederationNonce
@@ -225,24 +220,6 @@ func UnleashDefinition(c *config.Config, uc *UnleashConfig) unleashv1.Unleash {
 						To: []networkingv1.NetworkPolicyPeer{{
 							IPBlock: &networkingv1.IPBlock{
 								CIDR: fmt.Sprintf("%s/32", c.Unleash.SQLInstanceAddress),
-							},
-						}},
-					},
-					{
-						Ports: []networkingv1.NetworkPolicyPort{{
-							Protocol: &teamsApiProto,
-							Port:     &teamsApiPort,
-						}},
-						To: []networkingv1.NetworkPolicyPeer{{
-							NamespaceSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"kubernetes.io/metadata.name": teamsApiNamespace,
-								},
-							},
-							PodSelector: &metav1.LabelSelector{
-								MatchLabels: map[string]string{
-									"app.kubernetes.io/name": teamsApiName,
-								},
 							},
 						}},
 					},
