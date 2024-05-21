@@ -122,16 +122,28 @@ func getServerEnvVar(server *unleashv1.Unleash, name, defaultValue string, retur
 }
 
 type UnleashConfig struct {
-	Name                      string `form:"name" validate:"required,hostname"`
-	CustomVersion             string `form:"custom-version" validate:"omitempty"`
-	EnableFederation          bool   `form:"enable-federation,default=true"`
+	Name                      string `json:"name,omitempty" form:"name" validate:"required,hostname"`
+	CustomVersion             string `json:"custom-version,omitempty" form:"custom-version" validate:"omitempty"`
+	EnableFederation          bool   `json:"enable-federation,omitempty" form:"enable-federation,default=true"`
 	FederationNonce           string `validate:"required"`
-	AllowedTeams              string `form:"allowed-teams" validate:"omitempty"`
-	AllowedNamespaces         string `form:"allowed-namespaces" validate:"omitempty"`
-	AllowedClusters           string `form:"allowed-clusters" validate:"omitempty"`
-	LogLevel                  string `form:"loglevel,default=warn" validate:"required,oneof=debug info warn error fatal panic"`
-	DatabasePoolMax           int    `form:"database-pool-max,default=3" validate:"required,min=1,max=10"`
-	DatabasePoolIdleTimeoutMs int    `form:"database-pool-idle-timeout-ms,default=1000" validate:"required"`
+	AllowedTeams              string `json:"allowed-teams,omitempty" form:"allowed-teams" validate:"omitempty"`
+	AllowedNamespaces         string `json:"allowed-namespaces,omitempty" form:"allowed-namespaces" validate:"omitempty"`
+	AllowedClusters           string `json:"allowed-clusters,omitempty" form:"allowed-clusters" validate:"omitempty"`
+	LogLevel                  string `json:"log-level,omitempty" form:"loglevel,default=warn" validate:"required,oneof=debug info warn error fatal panic"`
+	DatabasePoolMax           int    `json:"database-pool-max,omitempty" form:"database-pool-max,default=3" validate:"required,min=1,max=10"`
+	DatabasePoolIdleTimeoutMs int    `json:"database-pool-idle-timeout-ms,omitempty" form:"database-pool-idle-timeout-ms,default=1000" validate:"required"`
+}
+
+func (uc *UnleashConfig) SetDefaultValues() {
+	if uc.LogLevel == "" {
+		uc.LogLevel = LogLevel
+	}
+	if uc.DatabasePoolMax == 0 {
+		uc.DatabasePoolMax, _ = strconv.Atoi(DatabasePoolMax)
+	}
+	if uc.DatabasePoolIdleTimeoutMs == 0 {
+		uc.DatabasePoolIdleTimeoutMs, _ = strconv.Atoi(DatabasePoolIdleTimeoutMs)
+	}
 }
 
 func (uc *UnleashConfig) Validate() error {

@@ -186,6 +186,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		uc.Name = instance.(*unleash.UnleashInstance).ServerInstance.GetName()
 	} else {
 		uc.FederationNonce = utils.RandomString(8)
+		uc.SetDefaultValues()
 	}
 
 	if validationErr := uc.Validate(); validationErr != nil {
@@ -203,6 +204,14 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		} else {
 			title = "New Unleash Instance"
 			action = "create"
+		}
+
+		if c.ContentType() == "application/json" {
+			c.JSON(400, gin.H{
+				"error":           "Input validation failed, see errors in details",
+				"validationError": validationErr.Error(),
+			})
+			return
 		}
 
 		c.HTML(400, "unleash-form.html", gin.H{
@@ -235,6 +244,14 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		_ = c.Error(err).
 			SetType(gin.ErrorTypePublic).
 			SetMeta(reason)
+		return
+	}
+
+	if c.ContentType() == "application/json" {
+		c.JSON(200, gin.H{
+			"message":  "Unleash instance persisted",
+			"instance": uc.Name,
+		})
 		return
 	}
 
