@@ -1,11 +1,13 @@
 package unleash
 
 import (
+	"strconv"
 	"testing"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/google/go-cmp/cmp"
 	"github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/github"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	"github.com/stretchr/testify/assert"
 	corev1 "k8s.io/api/core/v1"
@@ -410,4 +412,68 @@ func TestUnleashSpec(t *testing.T) {
 			Value: "100",
 		})
 	})
+}
+func TestMergeTeamsAndNamespaces(t *testing.T) {
+	testCases := []struct {
+		name               string
+		allowedTeams       string
+		allowedNamespaces  string
+		expectedTeams      string
+		expectedNamespaces string
+	}{
+		{
+			name:               "Merge teams and namespaces",
+			allowedTeams:       "team-a,team-b",
+			allowedNamespaces:  "namespace-a,namespace-b",
+			expectedTeams:      "namespace-a,namespace-b,team-a,team-b",
+			expectedNamespaces: "namespace-a,namespace-b,team-a,team-b",
+		},
+		{
+			name:               "Empty teams and namespaces",
+			allowedTeams:       "",
+			allowedNamespaces:  "",
+			expectedTeams:      "",
+			expectedNamespaces: "",
+		},
+		{
+			name:               "Teams and namespaces with leading/trailing spaces",
+			allowedTeams:       " team-a , team-b ",
+			allowedNamespaces:  " namespace-a , namespace-b ",
+			expectedTeams:      "namespace-a,namespace-b,team-a,team-b",
+			expectedNamespaces: "namespace-a,namespace-b,team-a,team-b",
+		},
+		{
+			name:               "Teams and namespaces with duplicate values",
+			allowedTeams:       "team-a,team-a,team-b,team-b",
+			allowedNamespaces:  "namespace-a,namespace-a,namespace-b,namespace-b",
+			expectedTeams:      "namespace-a,namespace-b,team-a,team-b",
+			expectedNamespaces: "namespace-a,namespace-b,team-a,team-b",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			uc := &UnleashConfig{
+				AllowedTeams:      tc.allowedTeams,
+				AllowedNamespaces: tc.allowedNamespaces,
+			}
+
+			uc.MergeTeamsAndNamespaces()
+
+			assert.Equal(t, tc.expectedTeams, uc.AllowedTeams)
+			assert.Equal(t, tc.expectedNamespaces, uc.AllowedNamespaces)
+		})
+	}
+}
+func TestSetDefaultValues(t *testing.T) {
+	uc := &UnleashConfig{}
+
+	uc.SetDefaultValues([]github.UnleashVersion{{
+		GitTag: "v5.10.2-20240329-070801-0180a96",
+	}})
+
+	assert.Equal(t, LogLevel, uc.LogLevel)
+	assert.Equal(t, DatabasePoolMax, strconv.Itoa(uc.DatabasePoolMax))
+	assert.Equal(t, DatabasePoolIdleTimeoutMs, strconv.Itoa(uc.DatabasePoolIdleTimeoutMs))
+	assert.Equal(t, "v5.10.2-20240329-070801-0180a96", uc.CustomVersion)
 }

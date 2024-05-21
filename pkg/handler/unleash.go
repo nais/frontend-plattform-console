@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"html/template"
 	"regexp"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/nais/bifrost/pkg/github"
@@ -78,7 +79,6 @@ func (h *Handler) UnleashNew(c *gin.Context) {
 		"title":           "New Unleash Instance",
 		"action":          "create",
 		"unleash":         uc,
-		"customImageName": unleash.UnleashCustomImageName,
 		"unleashVersions": unleashVersions,
 		"logLevel":        "warn",
 		"yaml":            yamlString,
@@ -146,7 +146,6 @@ func (h *Handler) UnleashInstanceEdit(c *gin.Context) {
 		"title":           "Edit Unleash: " + instance.Name,
 		"action":          "edit",
 		"unleash":         uc,
-		"customImageName": unleash.UnleashCustomImageName,
 		"unleashVersions": unleashVersions,
 	})
 }
@@ -173,6 +172,19 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		uc = unleash.UnleashVariables(instance.ServerInstance, true)
 	}
 
+	unleashVersions, err := github.UnleashVersions()
+	if err != nil {
+		log.WithError(err).Error("Error getting Unleash versions from Github")
+		unleashVersions = []github.UnleashVersion{
+			{
+				GitTag:        "v5.10.2-20240329-070801-0180a96",
+				ReleaseTime:   time.Date(2024, 3, 29, 7, 8, 1, 0, time.UTC),
+				CommitHash:    "0180a96",
+				VersionNumber: "5.10.2",
+			},
+		}
+	}
+
 	if err = c.ShouldBind(uc); err != nil {
 		log.WithError(err).Error("Error binding post data to Unleash config")
 
@@ -186,17 +198,14 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		uc.Name = instance.(*unleash.UnleashInstance).ServerInstance.GetName()
 	} else {
 		uc.FederationNonce = utils.RandomString(8)
-		uc.SetDefaultValues()
+		uc.SetDefaultValues(unleashVersions)
 	}
+
+	//  We are removing the differentiating between teams and namespaces, and merging them into one field
+	uc.MergeTeamsAndNamespaces()
 
 	if validationErr := uc.Validate(); validationErr != nil {
 		log.WithError(validationErr).Error("Error validating Unleash config")
-
-		unleashVersions, err := github.UnleashVersions()
-		if err != nil {
-			log.WithError(err).Error("Error getting Unleash versions from Github")
-			unleashVersions = []github.UnleashVersion{}
-		}
 
 		if exists {
 			title = "Edit Unleash: " + uc.Name
@@ -211,18 +220,16 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 				"error":           "Input validation failed, see errors in details",
 				"validationError": validationErr.Error(),
 			})
-			return
+		} else {
+			c.HTML(400, "unleash-form.html", gin.H{
+				"title":           title,
+				"action":          action,
+				"unleash":         uc,
+				"unleashVersions": unleashVersions,
+				"validationError": validationErr,
+				"error":           "Input validation failed, see errors in details",
+			})
 		}
-
-		c.HTML(400, "unleash-form.html", gin.H{
-			"title":           title,
-			"action":          action,
-			"unleash":         uc,
-			"unleashVersions": unleashVersions,
-			"customImageName": unleash.UnleashCustomImageName,
-			"validationError": validationErr,
-			"error":           "Input validation failed, see errors in details",
-		})
 		return
 	}
 
