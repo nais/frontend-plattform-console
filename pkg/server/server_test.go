@@ -38,7 +38,7 @@ func (s *MockUnleashService) Get(ctx context.Context, name string) (*unleash.Unl
 	return nil, fmt.Errorf("instance not found")
 }
 
-func (s *MockUnleashService) Create(ctx context.Context, uc *unleash.UnleashConfig) error {
+func (s *MockUnleashService) Create(ctx context.Context, uc *unleash.UnleashConfig) (*unleashv1.Unleash, error) {
 	spec := unleash.UnleashDefinition(s.c, uc)
 
 	s.Instances = append(s.Instances, &unleash.UnleashInstance{
@@ -47,20 +47,20 @@ func (s *MockUnleashService) Create(ctx context.Context, uc *unleash.UnleashConf
 		ServerInstance: &spec,
 	})
 
-	return nil
+	return s.Instances[len(s.Instances)-1].ServerInstance, nil
 }
 
-func (s *MockUnleashService) Update(ctx context.Context, uc *unleash.UnleashConfig) error {
+func (s *MockUnleashService) Update(ctx context.Context, uc *unleash.UnleashConfig) (*unleashv1.Unleash, error) {
 	spec := unleash.UnleashDefinition(s.c, uc)
 
 	for _, instance := range s.Instances {
 		if instance.Name == uc.Name {
 			instance.ServerInstance = &spec
-			return nil
+			return instance.ServerInstance, nil
 		}
 	}
 
-	return fmt.Errorf("instance not found")
+	return nil, fmt.Errorf("instance not found")
 }
 
 func (s *MockUnleashService) Delete(ctx context.Context, name string) error {
@@ -268,6 +268,14 @@ func TestUnleashNew(t *testing.T) {
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "LOG_LEVEL", Value: "debug"})
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "DATABASE_POOL_MAX", Value: "10"})
 	assert.Contains(t, service.Instances[3].ServerInstance.Spec.ExtraEnvVars, v1.EnvVar{Name: "DATABASE_POOL_IDLE_TIMEOUT_MS", Value: "100"})
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/unleash/new", strings.NewReader(`{"name": "my-name"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), `{"kind":"Unleash","apiVersion":"unleash.nais.io/v1","metadata":{"name":"my-name"`)
 }
 
 func TestUnleashEdit(t *testing.T) {
