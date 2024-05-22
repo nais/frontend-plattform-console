@@ -2,12 +2,14 @@ package unleash
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
 	fqdnV1alpha3 "github.com/GoogleCloudPlatform/gke-fqdnnetworkpolicies-golang/api/v1alpha3"
 	"github.com/go-playground/validator/v10"
 	"github.com/nais/bifrost/pkg/config"
+	"github.com/nais/bifrost/pkg/github"
 	"github.com/nais/bifrost/pkg/utils"
 	unleashv1 "github.com/nais/unleasherator/api/v1"
 	corev1 "k8s.io/api/core/v1"
@@ -134,7 +136,7 @@ type UnleashConfig struct {
 	DatabasePoolIdleTimeoutMs int    `json:"database-pool-idle-timeout-ms,omitempty" form:"database-pool-idle-timeout-ms,default=1000" validate:"required"`
 }
 
-func (uc *UnleashConfig) SetDefaultValues() {
+func (uc *UnleashConfig) SetDefaultValues(unleashVersions []github.UnleashVersion) {
 	if uc.LogLevel == "" {
 		uc.LogLevel = LogLevel
 	}
@@ -144,6 +146,31 @@ func (uc *UnleashConfig) SetDefaultValues() {
 	if uc.DatabasePoolIdleTimeoutMs == 0 {
 		uc.DatabasePoolIdleTimeoutMs, _ = strconv.Atoi(DatabasePoolIdleTimeoutMs)
 	}
+	if uc.CustomVersion == "" && len(unleashVersions) > 0 {
+		uc.CustomVersion = unleashVersions[0].GitTag
+	}
+}
+
+func (uc *UnleashConfig) MergeTeamsAndNamespaces() {
+	merged := make(map[string]bool)
+
+	for _, team := range utils.SplitNoEmpty(uc.AllowedTeams, ",") {
+		merged[strings.TrimSpace(team)] = true
+	}
+
+	for _, namespace := range utils.SplitNoEmpty(uc.AllowedNamespaces, ",") {
+		merged[strings.TrimSpace(namespace)] = true
+	}
+
+	result := make([]string, 0, len(merged))
+	for key := range merged {
+		result = append(result, key)
+	}
+
+	sort.Strings(result)
+
+	uc.AllowedTeams = strings.Join(result, ",")
+	uc.AllowedNamespaces = strings.Join(result, ",")
 }
 
 func (uc *UnleashConfig) Validate() error {
