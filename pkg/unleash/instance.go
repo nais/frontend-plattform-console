@@ -134,18 +134,18 @@ func deleteServer(ctx context.Context, kubeClient ctrl.Client, kubeNamespace str
 	return nil
 }
 
-func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) error {
+func createServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) (*unleashv1.Unleash, error) {
 	unleashDefinition := UnleashDefinition(config, uc)
 	if err := kubeClient.Create(ctx, &unleashDefinition); err != nil {
-		return &UnleashError{Err: err, Reason: "failed to create server instance"}
+		return nil, &UnleashError{Err: err, Reason: "failed to create server instance"}
 	}
-	return nil
+	return &unleashDefinition, nil
 }
 
-func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) error {
+func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Config, uc *UnleashConfig) (*unleashv1.Unleash, error) {
 	unleashDefinitionOld, err := getServer(ctx, kubeClient, config.Unleash.InstanceNamespace, uc.Name)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	unleashDefinitionNew := UnleashDefinition(config, uc)
@@ -155,10 +155,10 @@ func updateServer(ctx context.Context, kubeClient ctrl.Client, config *config.Co
 	unleashDefinitionNew.ObjectMeta.UID = unleashDefinitionOld.ObjectMeta.UID
 
 	if err := kubeClient.Update(ctx, &unleashDefinitionNew); err != nil {
-		return &UnleashError{Err: err, Reason: "failed to update server instance"}
+		return nil, &UnleashError{Err: err, Reason: "failed to update server instance"}
 	}
 
-	return nil
+	return &unleashDefinitionNew, nil
 }
 
 func getFQDNNetworkPolicy(ctx context.Context, kubeClient ctrl.Client, kubeNamespace string, name string) (*fqdnV1alpha3.FQDNNetworkPolicy, error) {

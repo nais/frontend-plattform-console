@@ -11,6 +11,8 @@ import (
 	"github.com/nais/bifrost/pkg/github"
 	"github.com/nais/bifrost/pkg/unleash"
 	"github.com/nais/bifrost/pkg/utils"
+
+	unleashv1 "github.com/nais/unleasherator/api/v1"
 )
 
 func (h *Handler) HealthHandler(c *gin.Context) {
@@ -233,10 +235,12 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 		return
 	}
 
+	var unleashInstance *unleashv1.Unleash
+
 	if exists {
-		err = h.unleashService.Update(ctx, uc)
+		unleashInstance, err = h.unleashService.Update(ctx, uc)
 	} else {
-		err = h.unleashService.Create(ctx, uc)
+		unleashInstance, err = h.unleashService.Create(ctx, uc)
 	}
 
 	if err != nil {
@@ -255,10 +259,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 	}
 
 	if c.ContentType() == "application/json" {
-		c.JSON(200, gin.H{
-			"message":  "Unleash instance persisted",
-			"instance": uc.Name,
-		})
+		c.JSON(200, unleashInstance)
 		return
 	}
 
