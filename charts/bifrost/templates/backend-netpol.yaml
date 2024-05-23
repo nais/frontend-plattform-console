@@ -4,6 +4,20 @@ kind: NetworkPolicy
 metadata:
   name: {{ .Release.Name }}-backend
 spec:
+  ingress:
+  - from:
+    podSelector:
+      matchLabels:
+        app: nais-api
+  - from:
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: ingress-nginx
+        app.kubernetes.io/instance: loadbalancer-iap
+  - from:
+    podSelector:
+      matchLabels:
+        app.kubernetes.io/name: prometheus
   egress:
   - to:
     - ipBlock:
@@ -39,4 +53,5 @@ spec:
       component: backend
   policyTypes:
   - Egress
+  - Ingress
 {{- end }}
