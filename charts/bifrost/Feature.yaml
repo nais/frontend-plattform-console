@@ -75,7 +75,7 @@ values:
   backend.unleash.webIngressHost:
     displayName: Web Ingress Host
     computed:
-      template: '"{{ subdomain . "unleash-web" }}"'
+      template: '"{{ subdomain . "unleash-web.iap" }}"'
   ingress.host:
     displayName: Ingress URL
     computed:
