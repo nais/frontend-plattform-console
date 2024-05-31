@@ -127,7 +127,7 @@ type UnleashConfig struct {
 	Name                      string `json:"name,omitempty" form:"name" validate:"required,hostname"`
 	CustomVersion             string `json:"custom-version,omitempty" form:"custom-version" validate:"omitempty"`
 	EnableFederation          bool   `json:"enable-federation,omitempty" form:"enable-federation,default=true"`
-	FederationNonce           string `json:"federation-nonce,omitempty" form:"federation-nonce", validate:"required"`
+	FederationNonce           string `json:"-" form:"-", validate:"required"`
 	AllowedTeams              string `json:"allowed-teams,omitempty" form:"allowed-teams" validate:"omitempty"`
 	AllowedNamespaces         string `json:"allowed-namespaces,omitempty" form:"allowed-namespaces" validate:"omitempty"`
 	AllowedClusters           string `json:"allowed-clusters,omitempty" form:"allowed-clusters" validate:"omitempty"`
