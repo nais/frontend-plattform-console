@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -308,6 +309,28 @@ func TestUnleashEdit(t *testing.T) {
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-namespaces\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input name=\"allowed-clusters\" type=\"hidden\" value=\"\">")
 	assert.Contains(t, w.Body.String(), "<input type=\"radio\" name=\"loglevel\" value=\"warn\" checked=\"checked\" tabindex=\"0\" class=\"hidden\">")
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/unleash/team-a/edit", strings.NewReader(`{"name": "foo", "allowed-teams": "team-z"}`))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), `{"kind":"Unleash","apiVersion":"unleash.nais.io/v1","metadata":{"name":"team-a"`)
+	assert.Contains(t, w.Body.String(), "\"TEAMS_ALLOWED_TEAMS\",\"value\":\"ns-a,ns-b,team-z\"")
+
+	uc := unleash.UnleashConfig{Name: "foo", AllowedTeams: "foo,bar"}
+	ucJson, err := json.Marshal(uc)
+	assert.NoError(t, err)
+
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("POST", "/unleash/team-a/edit", strings.NewReader(string(ucJson)))
+	req.Header.Set("Content-Type", "application/json")
+	router.ServeHTTP(w, req)
+	assert.Equal(t, 200, w.Code)
+	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
+	assert.Contains(t, w.Body.String(), `{"kind":"Unleash","apiVersion":"unleash.nais.io/v1","metadata":{"name":"team-a"`)
+	assert.Contains(t, w.Body.String(), "\"TEAMS_ALLOWED_TEAMS\",\"value\":\"bar,foo,ns-a,ns-b,team-z\"")
 }
 
 func TestUnleashGet(t *testing.T) {
