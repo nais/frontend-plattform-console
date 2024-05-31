@@ -198,6 +198,7 @@ func (h *Handler) UnleashInstancePost(c *gin.Context) {
 
 	if exists {
 		uc.Name = instance.(*unleash.UnleashInstance).ServerInstance.GetName()
+		uc.FederationNonce = instance.(*unleash.UnleashInstance).ServerInstance.Spec.Federation.SecretNonce
 	} else {
 		uc.FederationNonce = utils.RandomString(8)
 		uc.SetDefaultValues(unleashVersions)
