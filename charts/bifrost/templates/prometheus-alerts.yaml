@@ -11,9 +11,7 @@ spec:
         for: 5m
         labels:
           severity: warning
-          labels:
-            namespace: {{ .Release.Namespace }}
-            severity: warning
+          namespace: {{ .Release.Namespace }}
         annotations:
           summary: |
             {{ "The p99 database query latency for Unleash instance `{{ $labels.service }}` has been above 0.5 seconds for the last 5 minutes." }}
@@ -27,6 +25,7 @@ spec:
         for: 5m
         labels:
           severity: warning
+          namespace: {{ .Release.Namespace }}
         annotations:
           summary: "High rate of unsuccessful requests for Nginx Ingress Controller"
           consequence: "Applications may problems fetching feature toggles from Unleash or taking actions in the Unleash UI."
@@ -38,6 +37,7 @@ spec:
         for: 5m
         labels:
           severity: critical
+          namespace: {{ .Release.Namespace }}
         annotations:
           summary: "No connected instances for Unleash"
           consequence: "Unleasherator is not able to connect to Unleash and create new API keys for applications."
