@@ -7,8 +7,8 @@ spec:
     - name: unleash_database_alerts
       rules:
       - alert: UnleashHighDatabaseLatency
-        expr: sum(db_query_duration_seconds{quantile="0.99", namespace="{{ .Values.backend.unleash.instanceNamespace }}"}) by (service) > 0.5
-        for: 5m
+        expr: sum(db_query_duration_seconds{quantile="0.9", namespace="{{ .Values.backend.unleash.instanceNamespace }}"}) by (service) > 0.5
+        for: 10m
         labels:
           severity: warning
           namespace: {{ .Release.Namespace }}
