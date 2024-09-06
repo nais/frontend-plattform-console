@@ -184,7 +184,7 @@ func TestFQDNNetworkPolicySpec(t *testing.T) {
 	}
 
 	if !cmp.Equal(a, b) {
-		t.Errorf(cmp.Diff(a, b))
+		t.Error(cmp.Diff(a, b))
 	}
 }
 
@@ -413,6 +413,7 @@ func TestUnleashSpec(t *testing.T) {
 		})
 	})
 }
+
 func TestMergeTeamsAndNamespaces(t *testing.T) {
 	testCases := []struct {
 		name               string
@@ -465,6 +466,7 @@ func TestMergeTeamsAndNamespaces(t *testing.T) {
 		})
 	}
 }
+
 func TestSetDefaultValues(t *testing.T) {
 	uc := &UnleashConfig{}
 
