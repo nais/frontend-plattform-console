@@ -10,9 +10,8 @@ environmentKinds:
 values:
   backend.google.iapBackendServiceId:
     description: ID for Backend Service for IAP loadbanacer used for verifying JWT tokens from IAP.
-    required: true
-    config:
-      type: string
+    computed:
+      template: "{{.Env.iap_backend_id}}"
   backend.google.projectId:
     displayName: google project id
     computed:
